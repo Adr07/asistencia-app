@@ -7,10 +7,9 @@ import { useEmployeeId } from "./useEmployeeId";
 // import { useProjectTask } from "./useProjectTask";
 // import { useWorkedHours } from "./useWorkedHours";
 import { handleCheck } from "./handleCheck";
-import { handleChangeTask } from "./handleChangeTask";
 // import { resetFields } from "./resetFields";
 // import { useInternalProjectExclusion } from "./useInternalProjectExclusion";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { showMessage } from "../components/AttendanceKiosk/otros/util";
 
 // Hook principal que orquesta todos los hooks y lógica modularizada
@@ -25,6 +24,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   const [timer, setTimer] = useState<number>(0);
   const [description, setDescription] = useState<string>("");
   const [checkInTimestamp, setCheckInTimestamp] = useState<number | null>(null);
+  const [currentTaskStartTimestamp, setCurrentTaskStartTimestamp] = useState<number | null>(null); // <-- NUEVO: timestamp de inicio de tarea actual
   const [checkInTime, setCheckInTime] = useState<string>("");
   const [fullTime, setFullTime] = useState<string>("");
   const [lastCheckOutTimestamp, setLastCheckOutTimestamp] = useState<number | null>(null);
@@ -32,7 +32,6 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
 
   // Obtener función fetchEmployeeId del hook modularizado
   const fetchEmployeeId = useEmployeeId(props.uid, props.pass);
-  const RPC_URL = process.env.EXPO_PUBLIC_RPC_URL || '';
 
   // Timer efecto (contador)
   useEffect(() => {
@@ -61,6 +60,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       description,
       setCheckInTime,
       setCheckInTimestamp,
+      setCurrentTaskStartTimestamp, // <-- NUEVO: pasar setter para timestamp de tarea actual
       setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
       setLoading,
       showMessage,
@@ -88,6 +88,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       description: typeof customDescription === 'string' ? customDescription : description, // Usar SIEMPRE el argumento recibido
       progress, // Nuevo campo para % de avance
       setCheckOutTime,
+      setCurrentTaskStartTimestamp, // <-- NUEVO: también pasar setter (se reseteará a null en checkout final)
       setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
       setWorkedHours,
       setFullTime,
@@ -142,6 +143,8 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
     setDescription,
     checkInTimestamp,
     setCheckInTimestamp,
+    currentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
+    setCurrentTaskStartTimestamp, // <-- NUEVO: setter del timestamp
     fullTime,
     setFullTime,
     lastCheckOutTimestamp,

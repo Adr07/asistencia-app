@@ -52,21 +52,15 @@ export function usePendingTaskState() {
 
   // Setters protegidos para evitar SyntheticEvent
   const safeSetPendingProject = useCallback((val: any) => {
-    console.log('[DEBUG][safeSetPendingProject] Called with:', val);
     if (val && typeof val === "object" && val.nativeEvent) {
-      console.log('[DEBUG][safeSetPendingProject] Blocked SyntheticEvent');
       return;
     }
-    console.log('[DEBUG][safeSetPendingProject] Setting pendingProject to:', val);
     setPendingProject(val);
   }, []);
   const safeSetPendingTask = useCallback((val: any) => {
-    console.log('[DEBUG][safeSetPendingTask] Called with:', val);
     if (val && typeof val === "object" && val.nativeEvent) {
-      console.log('[DEBUG][safeSetPendingTask] Blocked SyntheticEvent');
       return;
     }
-    console.log('[DEBUG][safeSetPendingTask] Setting pendingTask to:', val);
     setPendingTask(val);
   }, []);
 

@@ -11,15 +11,7 @@ declare global {
   }
 }
 
-export function ProjectTaskStep(props: ProjectTaskStepProps) {
-  console.log('[DEBUG][ProjectTaskStep] Props received:', {
-    mode: props.mode,
-    pendingProject: props.pendingProject,
-    pendingTask: props.pendingTask,
-    safeSetPendingProject: !!props.safeSetPendingProject,
-    safeSetPendingTask: !!props.safeSetPendingTask
-  });
-  
+export function ProjectTaskStep(props: ProjectTaskStepProps) {  
   const {
     loading,
     uid,
@@ -98,12 +90,7 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
   // Debug para ver qué proyecto/tarea se selecciona en modo changing_task
   React.useEffect(() => {
     if (mode === "changing_task") {
-      console.log('[DEBUG][ProjectTaskStep] pendingProject:', pendingProject);
-      console.log('[DEBUG][ProjectTaskStep] pendingTask:', pendingTask);
-      console.log('[DEBUG][ProjectTaskStep] projectListSelectedProject:', projectListSelectedProject);
-      console.log('[DEBUG][ProjectTaskStep] projectListSelectedTask:', projectListSelectedTask);
       const isDisabled = mode === "changing_task" ? (loading || !pendingProject || !pendingTask) : (loading || !selectedProject || !selectedTask);
-      console.log('[DEBUG][ProjectTaskStep] Continue button disabled?', isDisabled);
     }
   }, [mode, pendingProject, pendingTask, loading, selectedProject, selectedTask, projectListSelectedProject, projectListSelectedTask]);
 
@@ -121,11 +108,9 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
         selectedProject={projectListSelectedProject}
         selectedTask={projectListSelectedTask}
         onSelectProject={(project) => {
-          console.log('[DEBUG] ProyectList onSelectProject wrapper called with:', project);
           handleSelectProject(project);
         }}
         onSelectTask={(task) => {
-          console.log('[DEBUG] ProyectList onSelectTask wrapper called with:', task);
           handleSelectTask(task);
         }}
         hideTitle={mode === "changing_task"}

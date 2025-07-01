@@ -106,10 +106,7 @@ export default function AttendanceKiosk(props: {
   });
   // Handler robusto para cambio de tarea (flujo completo de sign_out y sign_in)
   const handleChangeTaskFlow = React.useCallback(async (pendingProject: any, pendingTask: any) => {
-    console.log('[DEBUG] handleChangeTaskFlow called with:', { pendingProject, pendingTask });
-    
     if (!pendingProject || !pendingTask) {
-      console.error('[DEBUG] pendingProject or pendingTask is null/undefined');
       showMessage && showMessage('Error', 'Por favor selecciona un proyecto y una tarea antes de continuar.');
       return;
     }
@@ -150,8 +147,7 @@ export default function AttendanceKiosk(props: {
       setPendingProject(null);
       setPendingTask(null);
       setShowChangingTask(false);
-    } catch (error) {
-      console.error('Error en handleChangeTaskFlow:', error);
+    } catch {
       showMessage && showMessage('Error', 'Ocurrió un error al intentar cambiar de tarea.');
     }
   }, [
@@ -202,18 +198,8 @@ export default function AttendanceKiosk(props: {
   // --- Renderizado principal ---
   // El botón "Continuar" ejecuta handleChangeTaskFlow solo en modo cambio de tarea
   const handleContinueFromChangingTask = React.useCallback(() => {
-    console.log('[DEBUG] handleContinueFromChangingTask: About to call handleChangeTaskFlow with:', { pendingProject, pendingTask });
     handleChangeTaskFlow(pendingProject, pendingTask);
   }, [pendingProject, pendingTask, handleChangeTaskFlow]);
-
-  React.useEffect(() => {
-    console.log('[DEBUG] pendingProject or pendingTask changed:', { pendingProject, pendingTask });
-  }, [pendingProject, pendingTask]);
-
-  React.useEffect(() => {
-    console.log('[DEBUG] step or showChangingTask changed:', { step, showChangingTask });
-    console.log('[DEBUG] onContinue function will be:', step === "changing_task" || showChangingTask ? 'handleContinueFromChangingTask' : 'handleContinueFromProjectTask');
-  }, [step, showChangingTask]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, marginTop: 50 }]}> 

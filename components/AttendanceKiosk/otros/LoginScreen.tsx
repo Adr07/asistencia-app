@@ -1,15 +1,15 @@
 // components/otros/LoginScreen.tsx
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
   Button,
   StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import useThemeColors from "../../../hooks/useThemeColors";
+import { DB, RPC_URL } from "./config";
 import { rpcCall } from "./rpc";
-import { RPC_URL, DB } from "./config";
 import { showMessage } from "./util";
 
 type Props = {
@@ -58,10 +58,6 @@ export function LoginScreen({ onLogin }: Props) {
 
       onLogin(uid, isAdmin, pass);
     } catch (err: any) {
-      if (typeof window !== 'undefined' && window.console) {
-        // Mostrar error en consola del navegador
-        console.error('Odoo login error:', err);
-      }
       showMessage("Error de conexión", err.message || String(err));
     } finally {
       setLoading(false);

@@ -21,6 +21,8 @@ export async function handleChangeTask({
   description,
   progressInput, // <-- NUEVO: recibir progressInput
   checkInTimestamp,
+  currentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
+  setCurrentTaskStartTimestamp, // <-- NUEVO: setter para actualizar timestamp
 }: {
   fetchEmployeeId?: () => Promise<number>;
   uid: number;
@@ -41,6 +43,8 @@ export async function handleChangeTask({
   description?: string;
   progressInput?: string; // <-- NUEVO: tipo para progressInput
   checkInTimestamp?: number | null;
+  currentTaskStartTimestamp?: number | null; // <-- NUEVO: timestamp de inicio de tarea actual
+  setCurrentTaskStartTimestamp?: (v: number | null) => void; // <-- NUEVO: setter
 }) {
   setLoading(true);
   try {
@@ -98,7 +102,10 @@ export async function handleChangeTask({
     setStep("checked_out");
     // --- SEGUNDO: CREAR LÍNEA ANALÍTICA DE LA TAREA ANTERIOR ---
     if (prevProject && prevTask) {
-      const { diffHours } = calcDiffHours(checkInTimestamp);
+      // Usar currentTaskStartTimestamp para calcular solo el tiempo de la tarea actual
+      // Si no está disponible, usar checkInTimestamp como fallback
+      const taskStartTime = currentTaskStartTimestamp || checkInTimestamp;
+      const { diffHours } = calcDiffHours(taskStartTime);
       
       // Concatenar progreso a la descripción de la tarea anterior
       let finalDescription = description || "";
@@ -123,7 +130,6 @@ export async function handleChangeTask({
           uid,
           pass,
         });
-        console.log('[DEBUG][handleChangeTask] Línea analítica creada para tarea anterior con progreso:', finalDescription);
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear línea analítica:', err, err?.data || '');
         (showMessage || defaultShowMessage)(
@@ -150,7 +156,6 @@ export async function handleChangeTask({
           uid,
           pass,
         });
-        console.log('[DEBUG][handleChangeTask] Nuevo registro de asistencia creado correctamente');
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear nuevo registro de asistencia:', err);
         (showMessage || defaultShowMessage)(

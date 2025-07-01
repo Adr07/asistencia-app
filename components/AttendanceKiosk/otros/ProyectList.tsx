@@ -19,16 +19,6 @@ interface ProyectListProps {
 }
 
 export default function ProyectList({ uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle, currentProject, currentTask }: ProyectListProps) {
-  console.log('[DEBUG][ProyectList] Props received:', {
-    uid,
-    pass,
-    selectedProject,
-    selectedTask,
-    onSelectProject: !!onSelectProject,
-    onSelectTask: !!onSelectTask,
-    hideTitle
-  });
-
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [tareas, setTareas] = useState<{ [key: number]: any[] }>({});
   const [loading, setLoading] = useState(false);
@@ -45,7 +35,6 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   useEffect(() => {
     // Validación: uid y pass deben estar definidos y válidos
     if (uid == null || pass == null || pass === "") {
-      console.warn("[ProyectList] uid o pass no definidos. No se consulta Odoo.", { uid, pass });
       return;
     }
     async function fetchProjects() {
@@ -67,8 +56,6 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
         setProyectos(res);
       } catch (error: any) {
         showMessage('Error', error.message);
-        // También imprimir en consola para depuración
-        console.error('Odoo fetchProjects error:', error);
       } finally {
         setLoading(false);
       }
@@ -122,8 +109,7 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
       );
 
       setSearchResults({ projects: filteredProjects, tasks: tasksRes });
-    } catch (error: any) {
-      console.error('[DEBUG][performSearch] error:', error);
+    } catch {
       showMessage('Error', 'Error al realizar la búsqueda');
       setSearchResults({ projects: [], tasks: [] });
     } finally {
@@ -148,7 +134,6 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   // Mover fetchTasks fuera del useEffect para que esté disponible globalmente
   const fetchTasks = useCallback(async (projectId: number) => {
     setLoadingTasks(projectId);
-    console.log('[DEBUG][fetchTasks] solicitando tareas para proyecto', projectId);
     try {
       const res = await rpcCall<any[]>(
         'object', 'execute_kw',
@@ -163,11 +148,9 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
         ],
         RPC_URL
       );
-      console.log('[DEBUG][fetchTasks] resultado Odoo:', res);
       setTareas(prev => ({ ...prev, [projectId]: res }));
     } catch (error: any) {
       showMessage('Error', error.message);
-      console.error('[DEBUG][fetchTasks] error Odoo:', error);
     } finally {
       setLoadingTasks(null);
     }
@@ -216,20 +199,12 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
 
   // Handler para selección de proyecto
   const handleSelectProject = (proyecto: any) => {
-    console.log('[DEBUG][ProyectList] handleSelectProject internal called with:', proyecto);
-    console.log('[DEBUG][ProyectList] About to call onSelectProject with:', proyecto);
-    console.log('[DEBUG][ProyectList] onSelectProject function:', onSelectProject);
     onSelectProject(proyecto);
-    console.log('[DEBUG][ProyectList] onSelectProject called successfully');
   };
 
   // Handler para selección de tarea
   const handleSelectTask = (tarea: any) => {
-    console.log('[DEBUG][ProyectList] handleSelectTask internal called with:', tarea);
-    console.log('[DEBUG][ProyectList] About to call onSelectTask with:', tarea);
-    console.log('[DEBUG][ProyectList] onSelectTask function:', onSelectTask);
     onSelectTask(tarea);
-    console.log('[DEBUG][ProyectList] onSelectTask called successfully');
   };
 
   // Handler para expandir/plegar proyectos
@@ -243,12 +218,6 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
       return { ...prev, [projectId]: expanded };
     });
   };
-
-  // Debug para ver qué proyecto/tarea se selecciona
-  React.useEffect(() => {
-    console.log('[DEBUG][ProyectList] selectedProject:', selectedProject);
-    console.log('[DEBUG][ProyectList] selectedTask:', selectedTask);
-  }, [selectedProject, selectedTask]);
 
   return (
     <View style={ProyectListStyles.container}>

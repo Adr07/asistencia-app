@@ -1,10 +1,10 @@
-import { odooRead, odooCreate, odooWrite, odooSearch } from "../db/odooApi";
 import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
+import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
 import {
-  buildAnalyticLine,
-  calcDiffHours,
-  getNowUTCString,
-  getNowLocalTimeString,
+    buildAnalyticLine,
+    calcDiffHours,
+    getNowLocalTimeString,
+    getNowUTCString,
 } from "../utils/attendanceUtils";
 
 export async function handleCheck({
@@ -17,6 +17,7 @@ export async function handleCheck({
   checkInTimestamp,
   setCheckInTime,
   setCheckInTimestamp,
+  setCurrentTaskStartTimestamp, // <-- NUEVO: setter para timestamp de tarea actual
   setStep,
   setWorkedHours,
   setFullTime,
@@ -38,6 +39,7 @@ export async function handleCheck({
   checkInTimestamp?: number | null;
   setCheckInTime?: (v: string) => void;
   setCheckInTimestamp?: (v: number) => void;
+  setCurrentTaskStartTimestamp?: (v: number | null) => void; // <-- NUEVO: tipo para setter
   setStep?: (v: string) => void;
   setWorkedHours?: (v: string) => void;
   setFullTime?: (v: string) => void;
@@ -83,7 +85,9 @@ export async function handleCheck({
       });
       // Actualiza la UI y limpia campos
       setCheckInTime?.(getNowLocalTimeString());
-      setCheckInTimestamp?.(Date.now());
+      const now = Date.now();
+      setCheckInTimestamp?.(now);
+      setCurrentTaskStartTimestamp?.(now); // <-- NUEVO: establecer timestamp de inicio de tarea actual
       setStep?.("checked_in");
       setDescription?.("");
       setSelectedProject?.(null);
@@ -121,6 +125,7 @@ export async function handleCheck({
         });
         // Actualiza la UI y limpia campos
         setCheckOutTime?.(getNowLocalTimeString());
+        setCurrentTaskStartTimestamp?.(null); // <-- NUEVO: resetear timestamp de tarea actual
         setStep?.("checked_out");
         setWorkedHours?.("0");
         setFullTime?.("");
@@ -149,6 +154,7 @@ export async function handleCheck({
       });
       // Actualiza la UI y calcula horas trabajadas
       setCheckOutTime?.(getNowLocalTimeString());
+      setCurrentTaskStartTimestamp?.(null); // <-- NUEVO: resetear timestamp de tarea actual
       setStep?.("checked_out");
       const { diffHours, fullTimeStr } = calcDiffHours(checkInTimestamp);
       setWorkedHours?.(Number(diffHours).toFixed(2));
