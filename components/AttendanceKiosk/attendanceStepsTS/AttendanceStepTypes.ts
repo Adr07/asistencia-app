@@ -54,6 +54,8 @@ export interface BeforeCheckoutStepProps {
   formatTimer: (t: number) => string;
   description: string;
   setDescription: (desc: string) => void;
+  progressInput?: string;
+  setProgressInput?: (progress: string) => void;
 }
 
 // Props para el paso de selección de proyecto/tarea (ProjectTaskStep)
@@ -80,4 +82,6 @@ export interface ProjectTaskStepProps {
   safeSetPendingProject?: (project: Project | null) => void;
   safeSetPendingTask?: (task: Task | null) => void;
   handleChangeTaskFlow?: (pendingProject: Project | null, pendingTask: Task | null) => void | Promise<void>;
+  progressInput?: string;
+  setProgressInput?: (progress: string) => void;
 }

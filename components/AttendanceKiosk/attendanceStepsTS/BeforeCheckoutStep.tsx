@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Button, TextInput } from "react-native";
+import { Button, Text, TextInput, View } from "react-native";
 import styles from "../AttendanceStyles";
 import { BeforeCheckoutStepProps } from "./AttendanceStepTypes";
 
@@ -16,7 +16,16 @@ export function BeforeCheckoutStep({
   formatTimer,
   description,
   setDescription,
+  progressInput,
+  setProgressInput,
 }: BeforeCheckoutStepProps) {
+  // Estado local temporal para asegurar que el campo funcione
+  const [localProgress, setLocalProgress] = React.useState<string>("");
+  
+  // Usar el progress local si las props no están disponibles
+  const currentProgress = progressInput ?? localProgress;
+  const currentSetProgress = setProgressInput || setLocalProgress;
+
   return (
     <View>
       {/* Mensaje y contador */}
@@ -24,6 +33,34 @@ export function BeforeCheckoutStep({
       <View style={styles.centered}>
         <Text style={styles.timerLabel}>Contador:</Text>
         <Text style={styles.timer}>{formatTimer(timer)}</Text>
+      </View>
+      {/* Campo de progreso */}
+      <View style={{ marginVertical: 5 }}>
+        <Text style={styles.message}>Avance:</Text>
+        <TextInput
+          style={{
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 8,
+            padding: 8,
+            marginBottom: 12,
+            width: "100%",
+            fontSize: 16,
+          }}
+          placeholder="Introduce un valor entre 1 y 100"
+          keyboardType="number-pad"
+          value={currentProgress}
+          onChangeText={(val) => {
+            let num = val.replace(/[^0-9]/g, "");
+            if (num === "") {
+              currentSetProgress("");
+              return;
+            }
+            if (parseInt(num) > 100) num = "100";
+            currentSetProgress(num);
+          }}
+          maxLength={3}
+        />
       </View>
       {/* Campo de descripción */}
       <View style={{ marginVertical: 5 }}>

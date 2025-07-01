@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import * as attendanceHooks from "../../hooks/otros/attendanceHooks";
 import useThemeColors from "../../hooks/useThemeColors";
 import { handleChangeTask } from '../../ts/handleChangeTask';
+import { useProgress } from '../../ts/useProgress';
 import styles from "./AttendanceStyles";
 import { StepRenderer } from "./indexTs/StepRenderer";
 import {
@@ -54,6 +55,9 @@ export default function AttendanceKiosk(props: {
 
   // Estado para el input de progreso y si se está cambiando de tarea
   const [showChangingTask, setShowChangingTask] = React.useState(false);
+  
+  // Hook para manejar el input de progreso
+  const { progress, setProgress: setProgressInput } = useProgress();
   // Hook principal que orquesta el estado global y lógica de asistencia
   const {
     step, // Paso actual del flujo (welcome, checked_in, etc)
@@ -80,10 +84,11 @@ export default function AttendanceKiosk(props: {
   // Handler para check-out con progreso y descripción actual
   const handleCheckOutWithProgress = useCheckOutWithProgress({
     description,
+    progressInput: progress !== undefined ? progress.toString() : "",
     selectedProject,
     selectedTask,
-    handleCheckOut: (desc) => {
-      handleCheckOut(desc); // Solo descripción
+    handleCheckOut: (desc, prog) => {
+      handleCheckOut(desc, prog); // Descripción y progreso
     },
   });
   // Handler para iniciar el flujo de cambio de tarea
@@ -171,7 +176,7 @@ export default function AttendanceKiosk(props: {
   // Handler para avanzar desde CheckedInStep
   const handleNextFromCheckedIn = () => {
     setStep("before_checkout");
-    // setProgressInput(""); // Limpiar progreso al avanzar // ELIMINADO
+    setProgressInput(""); // Limpiar progreso al avanzar
   };
 
   // Handler para reiniciar desde CheckedOutStep
@@ -183,7 +188,7 @@ export default function AttendanceKiosk(props: {
     setCheckInTime("");
     setCheckOutTime("");
     setWorkedHours("");
-    // setProgressInput(""); // Limpiar progreso al reiniciar // ELIMINADO
+    setProgressInput(""); // Limpiar progreso al reiniciar
   };
 
   // Handler para continuar desde selección de proyecto/tarea (ProjectTaskStep)
@@ -254,6 +259,8 @@ export default function AttendanceKiosk(props: {
         setLastDescription={setLastDescription}
         lastProgress={lastProgress}
         setLastProgress={setLastProgress}
+        progressInput={progress !== undefined ? progress.toString() : ""}
+        setProgressInput={setProgressInput}
         safeSetPendingProject={safeSetPendingProject}
         safeSetPendingTask={safeSetPendingTask}
         handleCheckOutWithProgress={handleCheckOutWithProgress}

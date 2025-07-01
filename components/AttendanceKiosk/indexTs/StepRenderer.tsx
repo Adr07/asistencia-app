@@ -43,6 +43,8 @@ export function StepRenderer({
             safeSetPendingProject={props.safeSetPendingProject}
             safeSetPendingTask={props.safeSetPendingTask}
             handleChangeTaskFlow={props.handleChangeTaskFlow}
+            progressInput={props.progressInput}
+            setProgressInput={props.setProgressInput}
           />
         );
       }
@@ -69,6 +71,8 @@ export function StepRenderer({
           safeSetPendingProject={props.safeSetPendingProject}
           safeSetPendingTask={props.safeSetPendingTask}
           handleChangeTaskFlow={props.handleChangeTaskFlow}
+          progressInput={props.progressInput}
+          setProgressInput={props.setProgressInput}
         />
       );
     case "checked_in":
@@ -81,8 +85,6 @@ export function StepRenderer({
           loading={props.loading}
           description={props.description}
           setDescription={props.setDescription}
-          // progressInput={props.progressInput}
-          // setProgressInput={props.setProgressInput}
         />
       );
     case "before_checkout":
@@ -96,6 +98,8 @@ export function StepRenderer({
           formatTimer={props.formatTimer}
           description={props.description}
           setDescription={props.setDescription}
+          progressInput={props.progressInput}
+          setProgressInput={props.setProgressInput}
         />
       );
     case "changing_task":

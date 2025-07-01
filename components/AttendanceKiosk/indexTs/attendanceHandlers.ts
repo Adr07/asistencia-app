@@ -2,24 +2,34 @@ import { useCallback } from "react";
 import { handleCheck } from "../../../ts/handleCheck";
 
 /**
- * Handler para check-out con descripción actual.
- * Llama a handleCheckOut solo con la descripción.
+ * Handler para check-out con descripción actual y progreso opcional.
+ * Concatena el progreso a la descripción si está disponible.
  */
 export function useCheckOutWithProgress({
   description,
+  progressInput,
   selectedProject,
   selectedTask,
   handleCheckOut,
 }: {
   description: string;
+  progressInput?: string;
   selectedProject: any;
   selectedTask: any;
-  handleCheckOut: (desc: string) => void;
+  handleCheckOut: (desc: string, progress?: number) => void;
 }) {
   return useCallback(() => {
-    const desc = description;
-    handleCheckOut(desc);
-  }, [description, selectedProject, selectedTask, handleCheckOut]);
+    let finalDescription = description;
+    let progressValue: number | undefined = undefined;
+
+    // Si hay progreso, concatenarlo a la descripción
+    if (progressInput && progressInput.trim() !== "") {
+      finalDescription = `${description} | Progreso: ${progressInput}%`;
+      progressValue = Number(progressInput);
+    }
+
+    handleCheckOut(finalDescription, progressValue);
+  }, [description, progressInput, handleCheckOut]);
 }
 
 /**

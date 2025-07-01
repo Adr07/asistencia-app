@@ -1,6 +1,7 @@
-// Exporta todos los pasos desde la carpeta steps
-export { WelcomeStep } from "./steps/WelcomeStep";
-export { CheckedInStep } from "./steps/CheckedInStep";
-export { CheckedOutStep } from "./steps/CheckedOutStep";
-export { BeforeCheckoutStep } from "./steps/BeforeCheckoutStep";
-export { ProjectTaskStep } from "./steps/ProjectTaskStep";
+// Exporta todos los pasos desde la carpeta attendanceStepsTS
+export { BeforeCheckoutStep } from "./attendanceStepsTS/BeforeCheckoutStep";
+export { CheckedInStep } from "./attendanceStepsTS/CheckedInStep";
+export { CheckedOutStep } from "./attendanceStepsTS/CheckedOutStep";
+export { ProjectTaskStep } from "./attendanceStepsTS/ProjectTaskStep";
+export { WelcomeStep } from "./attendanceStepsTS/WelcomeStep";
+
