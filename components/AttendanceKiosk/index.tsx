@@ -77,7 +77,8 @@ export default function AttendanceKiosk(props: {
     setLastCheckOutTimestamp, setCheckInTimestamp, // Setters de timestamps
     showMessage, // Función para mostrar mensajes
     setLoading, // Setter de loading
-    checkInTimestamp, // <-- AÑADIR ESTA LÍNEA
+    checkInTimestamp, // Timestamp de check-in inicial
+    currentTaskStartTimestamp, setCurrentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
   } = attendanceHooks.useAttendanceMain(props);
 
   // --- Handlers extraídos a hooks personalizados ---
@@ -134,6 +135,8 @@ export default function AttendanceKiosk(props: {
       description,
       progressInput: lastProgress || "", // <-- USAR lastProgress para la tarea anterior
       checkInTimestamp,
+      currentTaskStartTimestamp, // <-- AGREGAR: timestamp de inicio de tarea actual
+      setCurrentTaskStartTimestamp, // <-- AGREGAR: setter para actualizar timestamp
     };
     try {
       const result = await handleChangeTask(payload);
@@ -167,6 +170,8 @@ export default function AttendanceKiosk(props: {
     showMessage,
     description,
     checkInTimestamp,
+    currentTaskStartTimestamp, // <-- AGREGAR: dependencia del timestamp de tarea actual
+    setCurrentTaskStartTimestamp, // <-- AGREGAR: dependencia del setter
     setPendingProject,
     setPendingTask,
     setShowChangingTask

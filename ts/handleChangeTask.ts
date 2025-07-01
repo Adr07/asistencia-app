@@ -102,9 +102,14 @@ export async function handleChangeTask({
     setStep("checked_out");
     // --- SEGUNDO: CREAR LÍNEA ANALÍTICA DE LA TAREA ANTERIOR ---
     if (prevProject && prevTask) {
-      // Usar currentTaskStartTimestamp para calcular solo el tiempo de la tarea actual
-      // Si no está disponible, usar checkInTimestamp como fallback
-      const taskStartTime = currentTaskStartTimestamp || checkInTimestamp;
+      // Para la tarea anterior, usar currentTaskStartTimestamp si está disponible, sino checkInTimestamp
+      // IMPORTANTE: currentTaskStartTimestamp debe contener el timestamp de inicio de la tarea que se va a cerrar
+      let taskStartTime = checkInTimestamp; // fallback por defecto
+      
+      if (currentTaskStartTimestamp) {
+        taskStartTime = currentTaskStartTimestamp;
+      }
+      
       const { diffHours } = calcDiffHours(taskStartTime);
       
       // Concatenar progreso a la descripción de la tarea anterior
@@ -156,6 +161,10 @@ export async function handleChangeTask({
           uid,
           pass,
         });
+        
+        // IMPORTANTE: Actualizar currentTaskStartTimestamp con el timestamp del nuevo registro
+        // para que las horas de la tarea 2 se calculen desde este momento
+        setCurrentTaskStartTimestamp?.(now.getTime());
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear nuevo registro de asistencia:', err);
         (showMessage || defaultShowMessage)(

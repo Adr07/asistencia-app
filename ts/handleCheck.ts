@@ -1,10 +1,10 @@
 import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
 import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
 import {
-    buildAnalyticLine,
-    calcDiffHours,
-    getNowLocalTimeString,
-    getNowUTCString,
+  buildAnalyticLine,
+  calcDiffHours,
+  getNowLocalTimeString,
+  getNowUTCString,
 } from "../utils/attendanceUtils";
 
 export async function handleCheck({
@@ -15,6 +15,7 @@ export async function handleCheck({
   selectedTask,
   description,
   checkInTimestamp,
+  currentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
   setCheckInTime,
   setCheckInTimestamp,
   setCurrentTaskStartTimestamp, // <-- NUEVO: setter para timestamp de tarea actual
@@ -37,6 +38,7 @@ export async function handleCheck({
   selectedTask: any;
   description: string;
   checkInTimestamp?: number | null;
+  currentTaskStartTimestamp?: number | null; // <-- NUEVO: timestamp de inicio de tarea actual  
   setCheckInTime?: (v: string) => void;
   setCheckInTimestamp?: (v: number) => void;
   setCurrentTaskStartTimestamp?: (v: number | null) => void; // <-- NUEVO: tipo para setter
@@ -156,7 +158,11 @@ export async function handleCheck({
       setCheckOutTime?.(getNowLocalTimeString());
       setCurrentTaskStartTimestamp?.(null); // <-- NUEVO: resetear timestamp de tarea actual
       setStep?.("checked_out");
-      const { diffHours, fullTimeStr } = calcDiffHours(checkInTimestamp);
+      
+      // IMPORTANTE: Usar currentTaskStartTimestamp si está disponible (para tarea 2 después de cambio),
+      // sino usar checkInTimestamp (para tarea 1 inicial)
+      const timestampToUse = currentTaskStartTimestamp || checkInTimestamp;
+      const { diffHours, fullTimeStr } = calcDiffHours(timestampToUse);
       setWorkedHours?.(Number(diffHours).toFixed(2));
       setFullTime?.(fullTimeStr);
       setDescription?.("");

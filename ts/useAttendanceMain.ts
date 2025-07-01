@@ -58,6 +58,8 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       selectedProject,
       selectedTask,
       description,
+      checkInTimestamp,
+      currentTaskStartTimestamp, // <-- NUEVO: pasar timestamp de tarea actual
       setCheckInTime,
       setCheckInTimestamp,
       setCurrentTaskStartTimestamp, // <-- NUEVO: pasar setter para timestamp de tarea actual
@@ -87,13 +89,14 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       selectedTask,
       description: typeof customDescription === 'string' ? customDescription : description, // Usar SIEMPRE el argumento recibido
       progress, // Nuevo campo para % de avance
+      checkInTimestamp,
+      currentTaskStartTimestamp, // <-- NUEVO: pasar timestamp de tarea actual
       setCheckOutTime,
       setCurrentTaskStartTimestamp, // <-- NUEVO: también pasar setter (se reseteará a null en checkout final)
       setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
       setWorkedHours,
       setFullTime,
       setLoading,
-      checkInTimestamp,
       showMessage,
       // Limpiar descripción, proyecto y tarea después de check-out
       setDescription: () => setDescription("") ,
