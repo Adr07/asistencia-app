@@ -7,6 +7,12 @@ import {
   getNowUTCString,
 } from "../utils/attendanceUtils";
 
+/**
+ * Maneja los registros de entrada (check-in) y salida (check-out) de asistencia.
+ * Para check-out, también registra las horas trabajadas en la tarea como línea analítica.
+ * 
+ * @param action - "sign_in" para entrada, "sign_out" para salida
+ */
 export async function handleCheck({
   action,
   uid,
@@ -15,10 +21,10 @@ export async function handleCheck({
   selectedTask,
   description,
   checkInTimestamp,
-  currentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
+  currentTaskStartTimestamp,
   setCheckInTime,
   setCheckInTimestamp,
-  setCurrentTaskStartTimestamp, // <-- NUEVO: setter para timestamp de tarea actual
+  setCurrentTaskStartTimestamp,
   setStep,
   setWorkedHours,
   setFullTime,
@@ -38,10 +44,10 @@ export async function handleCheck({
   selectedTask: any;
   description: string;
   checkInTimestamp?: number | null;
-  currentTaskStartTimestamp?: number | null; // <-- NUEVO: timestamp de inicio de tarea actual  
+  currentTaskStartTimestamp?: number | null;
   setCheckInTime?: (v: string) => void;
   setCheckInTimestamp?: (v: number) => void;
-  setCurrentTaskStartTimestamp?: (v: number | null) => void; // <-- NUEVO: tipo para setter
+  setCurrentTaskStartTimestamp?: (v: number | null) => void;
   setStep?: (v: string) => void;
   setWorkedHours?: (v: string) => void;
   setFullTime?: (v: string) => void;
@@ -54,10 +60,9 @@ export async function handleCheck({
   setSelectedTask?: (v: any) => void;
   progress?: number;
 }) {
-  setLoading(true); // Inicia el estado de carga
-  //Obtener al usuario actual
+  setLoading(true);
   try {
-    // Busca el empleado en Odoo usando el uid
+    // Obtener ID del empleado actual desde Odoo
     const empleados = (await odooRead({
       model: "hr.employee",
       fields: ["id"],
@@ -68,28 +73,29 @@ export async function handleCheck({
     })) as any[];
     if (!empleados.length) throw new Error("Empleado no encontrado");
     const empId = empleados[0].id;
-    //Crear objetos de fecha y hora 
+    
     const nowUTC = getNowUTCString();
+    
     if (action === "sign_in") {
-      // --- CHECK IN ---
-      // Prepara los valores para crear el registro de asistencia
+      // ENTRADA (CHECK-IN): Crear nuevo registro de asistencia
       const vals: any = { employee_id: empId, check_in: nowUTC };
       if (geo) {
         vals.in_latitude = Number(geo.latitude);
         vals.in_longitude = Number(geo.longitude);
       }
-      // Crea el registro de asistencia en Odoo
+      
       await odooCreate({
         model: "hr.attendance",
         vals,
         uid,
         pass,
       });
-      // Actualiza la UI y limpia campos
+      
+      // Actualizar UI y establecer timestamps
       setCheckInTime?.(getNowLocalTimeString());
       const now = Date.now();
       setCheckInTimestamp?.(now);
-      setCurrentTaskStartTimestamp?.(now); // <-- NUEVO: establecer timestamp de inicio de tarea actual
+      setCurrentTaskStartTimestamp?.(now); // Establecer inicio de tarea actual
       setStep?.("checked_in");
       setDescription?.("");
       setSelectedProject?.(null);
@@ -99,8 +105,9 @@ export async function handleCheck({
         "Tu entrada ha sido registrada correctamente."
       );
     } else {
-      // --- CHECK OUT ---
-      // Buscar último registro abierto (sin check_out)
+      // SALIDA (CHECK-OUT): Cerrar registro y registrar horas trabajadas
+      
+      // Buscar el registro de asistencia abierto
       const ids = (await odooSearch({
         model: "hr.attendance",
         domain: [
@@ -111,13 +118,15 @@ export async function handleCheck({
         pass,
         limit: 1,
       })) as number[];
-      if (!ids.length)
+      
+      if (!ids.length) {
         throw new Error(
           "No se encontró un registro de entrada abierto para hacer check-out."
         );
-      // Si no hay proyecto o tarea, solo cerrar el registro y limpiar estado
+      }
+      
+      // Si no hay proyecto o tarea seleccionados, solo cerrar el registro
       if (!selectedProject || !selectedTask) {
-        // Cierra el registro de asistencia
         await odooWrite({
           model: "hr.attendance",
           ids,
@@ -125,9 +134,9 @@ export async function handleCheck({
           uid,
           pass,
         });
-        // Actualiza la UI y limpia campos
+        
         setCheckOutTime?.(getNowLocalTimeString());
-        setCurrentTaskStartTimestamp?.(null); // <-- NUEVO: resetear timestamp de tarea actual
+        setCurrentTaskStartTimestamp?.(null);
         setStep?.("checked_out");
         setWorkedHours?.("0");
         setFullTime?.("");
@@ -140,13 +149,14 @@ export async function handleCheck({
         );
         return;
       }
-      // Actualizar registro con check_out
+      
+      // Cerrar el registro de asistencia con check-out
       const vals: any = { check_out: nowUTC };
       if (geo) {
         vals.out_latitude = Number(geo.latitude);
         vals.out_longitude = Number(geo.longitude);
       }
-      // Cierra el registro de asistencia en Odoo
+      
       await odooWrite({
         model: "hr.attendance",
         ids,
@@ -154,13 +164,15 @@ export async function handleCheck({
         uid,
         pass,
       });
-      // Actualiza la UI y calcula horas trabajadas
+      
+      // Calcular horas trabajadas y actualizar UI
       setCheckOutTime?.(getNowLocalTimeString());
-      setCurrentTaskStartTimestamp?.(null); // <-- NUEVO: resetear timestamp de tarea actual
+      setCurrentTaskStartTimestamp?.(null);
       setStep?.("checked_out");
       
-      // IMPORTANTE: Usar currentTaskStartTimestamp si está disponible (para tarea 2 después de cambio),
-      // sino usar checkInTimestamp (para tarea 1 inicial)
+      // Usar el timestamp correcto según el contexto:
+      // - currentTaskStartTimestamp: para tareas después de un cambio de tarea
+      // - checkInTimestamp: para la primera tarea desde el check-in inicial
       const timestampToUse = currentTaskStartTimestamp || checkInTimestamp;
       const { diffHours, fullTimeStr } = calcDiffHours(timestampToUse);
       setWorkedHours?.(Number(diffHours).toFixed(2));
@@ -168,9 +180,9 @@ export async function handleCheck({
       setDescription?.("");
       setSelectedProject?.(null);
       setSelectedTask?.(null);
-      // Registrar línea de tiempo en la tarea
+      
+      // Crear línea analítica en Odoo para registrar las horas trabajadas
       if (selectedProject && selectedTask) {
-        // Construye la línea analítica para Odoo
         const analyticLine = buildAnalyticLine({
           customDescription: arguments[0]?.customDescription,
           description,
@@ -179,15 +191,16 @@ export async function handleCheck({
           taskId: selectedTask.id,
           diffHours,
         });
+        
         try {
-          // Crea la línea analítica en Odoo
           await odooCreate({
             model: "account.analytic.line",
             vals: analyticLine,
             uid,
             pass,
           });
-          // Si hay progreso, actualiza el campo en la tarea
+          
+          // Actualizar progreso de la tarea si fue proporcionado
           if (progress !== undefined && selectedTask) {
             await odooWrite({
               model: "project.task",
@@ -197,6 +210,7 @@ export async function handleCheck({
               pass,
             });
           }
+          
           (showMessage || defaultShowMessage)(
             "Tarea actualizada",
             "Las horas trabajadas han sido registradas correctamente en la tarea."

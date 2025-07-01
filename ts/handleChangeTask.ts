@@ -2,6 +2,15 @@ import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk
 import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
 import { buildAnalyticLine, calcDiffHours } from "../utils/attendanceUtils";
 
+/**
+ * Maneja el cambio de tarea completo: cierra la tarea actual, registra sus horas trabajadas,
+ * y abre un nuevo registro para la nueva tarea.
+ * 
+ * Flujo:
+ * 1. Cierra el registro de asistencia actual (check-out)
+ * 2. Crea línea analítica con las horas trabajadas en la tarea anterior
+ * 3. Abre nuevo registro de asistencia para la nueva tarea (check-in)
+ */
 export async function handleChangeTask({
   fetchEmployeeId,
   uid,
@@ -16,13 +25,13 @@ export async function handleChangeTask({
   showMessage,
   newProject,
   newTask,
-  prevProject, // <-- CAMBIO: ahora recibimos prevProject
-  prevTask,    // <-- CAMBIO: ahora recibimos prevTask
+  prevProject,
+  prevTask,
   description,
-  progressInput, // <-- NUEVO: recibir progressInput
+  progressInput,
   checkInTimestamp,
-  currentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
-  setCurrentTaskStartTimestamp, // <-- NUEVO: setter para actualizar timestamp
+  currentTaskStartTimestamp,
+  setCurrentTaskStartTimestamp,
 }: {
   fetchEmployeeId?: () => Promise<number>;
   uid: number;
@@ -38,17 +47,17 @@ export async function handleChangeTask({
   RPC_URL: string;
   newProject?: any;
   newTask?: any;
-  prevProject?: any; // <-- CAMBIO
-  prevTask?: any;    // <-- CAMBIO
+  prevProject?: any;
+  prevTask?: any;
   description?: string;
-  progressInput?: string; // <-- NUEVO: tipo para progressInput
+  progressInput?: string;
   checkInTimestamp?: number | null;
-  currentTaskStartTimestamp?: number | null; // <-- NUEVO: timestamp de inicio de tarea actual
-  setCurrentTaskStartTimestamp?: (v: number | null) => void; // <-- NUEVO: setter
+  currentTaskStartTimestamp?: number | null;
+  setCurrentTaskStartTimestamp?: (v: number | null) => void;
 }) {
   setLoading(true);
   try {
-    // Obtener id de empleado usando odooRead
+    // Obtener ID del empleado actual
     let empId: number;
     if (fetchEmployeeId) {
       empId = await fetchEmployeeId();
@@ -64,10 +73,11 @@ export async function handleChangeTask({
       if (!empleados.length) throw new Error("Empleado no encontrado");
       empId = empleados[0].id;
     }
+    
     const now = new Date();
     const nowUTC = now.toISOString().replace("T", " ").slice(0, 19);
     
-    // Buscar último registro abierto (sin check_out)
+    // Verificar que existe un registro de asistencia abierto
     const ids = await odooSearch({
       model: "hr.attendance",
       domain: [["employee_id", "=", empId], ["check_out", "=", false]],
@@ -75,6 +85,7 @@ export async function handleChangeTask({
       pass,
       limit: 1,
     }) as number[];
+    
     if (!ids.length) {
       (showMessage || defaultShowMessage)(
         "No hay registro abierto",
@@ -87,7 +98,8 @@ export async function handleChangeTask({
       setLoading(false);
       return false;
     }
-    // --- PRIMERO: CERRAR REGISTRO ANTERIOR (CHECK-OUT) ---
+    
+    // PASO 1: Cerrar el registro de asistencia actual (check-out)
     await odooWrite({
       model: "hr.attendance",
       ids,
@@ -100,19 +112,19 @@ export async function handleChangeTask({
     );
     setLastCheckOutTimestamp(now.getTime());
     setStep("checked_out");
-    // --- SEGUNDO: CREAR LÍNEA ANALÍTICA DE LA TAREA ANTERIOR ---
+    
+    // PASO 2: Registrar las horas trabajadas en la tarea anterior
     if (prevProject && prevTask) {
-      // Para la tarea anterior, usar currentTaskStartTimestamp si está disponible, sino checkInTimestamp
-      // IMPORTANTE: currentTaskStartTimestamp debe contener el timestamp de inicio de la tarea que se va a cerrar
-      let taskStartTime = checkInTimestamp; // fallback por defecto
+      // Calcular tiempo trabajado desde el inicio de la tarea hasta ahora
+      let taskStartTime = checkInTimestamp; // Para la primera tarea, usar timestamp del check-in inicial
       
       if (currentTaskStartTimestamp) {
-        taskStartTime = currentTaskStartTimestamp;
+        taskStartTime = currentTaskStartTimestamp; // Para tareas subsiguientes, usar su timestamp específico
       }
       
       const { diffHours } = calcDiffHours(taskStartTime);
       
-      // Concatenar progreso a la descripción de la tarea anterior
+      // Agregar progreso a la descripción si fue proporcionado
       let finalDescription = description || "";
       if (progressInput && progressInput.trim()) {
         finalDescription = finalDescription ? 
@@ -120,14 +132,16 @@ export async function handleChangeTask({
           `Progreso: ${progressInput.trim()}%`;
       }
       
+      // Crear línea analítica en Odoo para registrar las horas trabajadas
       const analyticLine = buildAnalyticLine({
-        customDescription: finalDescription, // Usar descripción con progreso concatenado
-        description: finalDescription, // Usar descripción con progreso concatenado
+        customDescription: finalDescription,
+        description: finalDescription,
         uid,
         projectId: prevProject.id,
         taskId: prevTask.id,
         diffHours,
       });
+      
       try {
         await odooCreate({
           model: "account.analytic.line",
@@ -147,13 +161,12 @@ export async function handleChangeTask({
     }
 
 
-    // --- TERCERO: CREAR NUEVO REGISTRO DE ASISTENCIA (CHECK-IN NUEVA TAREA) ---
+    // PASO 3: Crear nuevo registro de asistencia para la nueva tarea (check-in)
     if (newProject && newTask) {
       try {
         const checkInVals = {
           employee_id: empId,
           check_in: nowUTC,
-          // project_id y task_id eliminados porque no existen en hr.attendance
         };
         await odooCreate({
           model: "hr.attendance",
@@ -162,8 +175,7 @@ export async function handleChangeTask({
           pass,
         });
         
-        // IMPORTANTE: Actualizar currentTaskStartTimestamp con el timestamp del nuevo registro
-        // para que las horas de la tarea 2 se calculen desde este momento
+        // Actualizar timestamp para que la nueva tarea calcule sus horas desde este momento
         setCurrentTaskStartTimestamp?.(now.getTime());
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear nuevo registro de asistencia:', err);
@@ -178,7 +190,7 @@ export async function handleChangeTask({
       console.warn('[WARN][handleChangeTask] newProject o newTask no definidos, no se crea nuevo registro de asistencia');
     }
 
-    // --- ACTUALIZAR ESTADO UI ---
+    // Actualizar estado de la interfaz
     setStep("checked_in");
     setSelectedProject?.(newProject);
     setSelectedTask?.(newTask);
