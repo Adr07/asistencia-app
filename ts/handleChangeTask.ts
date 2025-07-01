@@ -1,5 +1,5 @@
-import { odooRead, odooWrite, odooSearch, odooCreate } from "../db/odooApi";
 import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
+import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
 import { buildAnalyticLine, calcDiffHours } from "../utils/attendanceUtils";
 
 export async function handleChangeTask({
@@ -19,6 +19,7 @@ export async function handleChangeTask({
   prevProject, // <-- CAMBIO: ahora recibimos prevProject
   prevTask,    // <-- CAMBIO: ahora recibimos prevTask
   description,
+  progressInput, // <-- NUEVO: recibir progressInput
   checkInTimestamp,
 }: {
   fetchEmployeeId?: () => Promise<number>;
@@ -38,6 +39,7 @@ export async function handleChangeTask({
   prevProject?: any; // <-- CAMBIO
   prevTask?: any;    // <-- CAMBIO
   description?: string;
+  progressInput?: string; // <-- NUEVO: tipo para progressInput
   checkInTimestamp?: number | null;
 }) {
   setLoading(true);
@@ -97,21 +99,31 @@ export async function handleChangeTask({
     // --- SEGUNDO: CREAR LÍNEA ANALÍTICA DE LA TAREA ANTERIOR ---
     if (prevProject && prevTask) {
       const { diffHours } = calcDiffHours(checkInTimestamp);
+      
+      // Concatenar progreso a la descripción de la tarea anterior
+      let finalDescription = description || "";
+      if (progressInput && progressInput.trim()) {
+        finalDescription = finalDescription ? 
+          `${finalDescription} | Progreso: ${progressInput.trim()}%` : 
+          `Progreso: ${progressInput.trim()}%`;
+      }
+      
       const analyticLine = buildAnalyticLine({
-        customDescription: description || "", // Asegura string
-        description: description || "", // Asegura string
+        customDescription: finalDescription, // Usar descripción con progreso concatenado
+        description: finalDescription, // Usar descripción con progreso concatenado
         uid,
         projectId: prevProject.id,
         taskId: prevTask.id,
         diffHours,
       });
       try {
-        const analyticResult = await odooCreate({
+        await odooCreate({
           model: "account.analytic.line",
           vals: analyticLine,
           uid,
           pass,
         });
+        console.log('[DEBUG][handleChangeTask] Línea analítica creada para tarea anterior con progreso:', finalDescription);
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear línea analítica:', err, err?.data || '');
         (showMessage || defaultShowMessage)(
@@ -132,12 +144,13 @@ export async function handleChangeTask({
           check_in: nowUTC,
           // project_id y task_id eliminados porque no existen en hr.attendance
         };
-        const newAttendance = await odooCreate({
+        await odooCreate({
           model: "hr.attendance",
           vals: checkInVals,
           uid,
           pass,
         });
+        console.log('[DEBUG][handleChangeTask] Nuevo registro de asistencia creado correctamente');
       } catch (err: any) {
         console.error('[ERROR][handleChangeTask] Error al crear nuevo registro de asistencia:', err);
         (showMessage || defaultShowMessage)(

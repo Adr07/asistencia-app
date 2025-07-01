@@ -94,6 +94,7 @@ export default function AttendanceKiosk(props: {
   // Handler para iniciar el flujo de cambio de tarea
   const startChangingTask = useStartChangingTask({
     description,
+    progressInput: progress !== undefined ? progress.toString() : "", // <-- PASAR EL PROGRESO ACTUAL
     setLastDescription,
     setLastProgress,
     setLastProject, // <-- GUARDAR PROYECTO ANTERIOR
@@ -134,6 +135,7 @@ export default function AttendanceKiosk(props: {
       prevProject, // <-- USAR LOS GUARDADOS
       prevTask,    // <-- USAR LOS GUARDADOS
       description,
+      progressInput: lastProgress || "", // <-- USAR lastProgress para la tarea anterior
       checkInTimestamp,
     };
     try {
@@ -155,6 +157,7 @@ export default function AttendanceKiosk(props: {
   }, [
     lastProject,
     lastTask,
+    lastProgress, // <-- AGREGAR lastProgress a las dependencias
     fetchEmployeeId,
     props.uid,
     props.pass,

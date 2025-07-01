@@ -38,6 +38,7 @@ export function useCheckOutWithProgress({
  */
 export function useStartChangingTask({
   description,
+  progressInput, // <-- NUEVO: recibir el progreso actual
   setLastDescription,
   setLastProgress,
   setLastProject, // <-- NUEVO
@@ -48,6 +49,7 @@ export function useStartChangingTask({
   setStep,
 }: {
   description: string;
+  progressInput: string; // <-- NUEVO: tipo para el progreso actual
   setLastDescription: (v: string) => void;
   setLastProgress: (v: string) => void;
   setLastProject: (v: any) => void; // <-- NUEVO
@@ -59,12 +61,12 @@ export function useStartChangingTask({
 }) {
   return useCallback(() => {
     setLastDescription(description);
-    setLastProgress(""); // Limpiar progreso
+    setLastProgress(progressInput || ""); // <-- GUARDAR EL PROGRESO ACTUAL
     setLastProject(selectedProject); // <-- GUARDAR PROYECTO ANTERIOR
     setLastTask(selectedTask);       // <-- GUARDAR TAREA ANTERIOR
     setShowChangingTask(true);
     setStep("changing_task");
-  }, [description, setLastDescription, setLastProgress, setLastProject, setLastTask, selectedProject, selectedTask, setShowChangingTask, setStep]);
+  }, [description, progressInput, setLastDescription, setLastProgress, setLastProject, setLastTask, selectedProject, selectedTask, setShowChangingTask, setStep]);
 }
 
 /**

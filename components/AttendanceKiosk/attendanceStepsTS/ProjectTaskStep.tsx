@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, ScrollView, Text, TextInput, View } from "react-native";
+import { Button, ScrollView, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
 import ProyectList from "../otros/ProyectList";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
@@ -28,8 +28,6 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     selectedTask,
     setSelectedProject,
     setSelectedTask,
-    description,
-    setDescription,
     onCheckIn,
     onLogout,
     onCancel,
@@ -38,24 +36,16 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     continueButtonColor,
     pendingProject,
     pendingTask,
-    setPendingProject,
-    setPendingTask,
     safeSetPendingProject,
     safeSetPendingTask,
-    handleChangeTaskFlow,
     progressInput,
     setProgressInput,
   } = props;
 
   // En modo changing_task, solo actualizar pendingProject/pendingTask, no selectedProject/selectedTask
   const handleSelectProject = (project: any) => {
-    console.log('[DEBUG] ===== handleSelectProject START =====');
-    console.log('[DEBUG] handleSelectProject called with:', project, 'mode:', mode);
-    console.log('[DEBUG] safeSetPendingProject available?', !!safeSetPendingProject);
     if (mode === "changing_task" && safeSetPendingProject) {
-      console.log('[DEBUG] Setting pending project:', project);
       safeSetPendingProject(project);
-      console.log('[DEBUG] After setting pending project');
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.__logPendingProject) {
           window.__logPendingProject();
@@ -63,18 +53,11 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
       }, 0);
       return;
     }
-    console.log('[DEBUG] Setting selected project (not changing_task mode):', project);
     setSelectedProject && setSelectedProject(project);
-    console.log('[DEBUG] ===== handleSelectProject END =====');
   };
   const handleSelectTask = (task: any) => {
-    console.log('[DEBUG] ===== handleSelectTask START =====');
-    console.log('[DEBUG] handleSelectTask called with:', task, 'mode:', mode);
-    console.log('[DEBUG] safeSetPendingTask available?', !!safeSetPendingTask);
     if (mode === "changing_task" && safeSetPendingTask) {
-      console.log('[DEBUG] Setting pending task:', task);
       safeSetPendingTask(task);
-      console.log('[DEBUG] After setting pending task');
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.__logPendingTask) {
           window.__logPendingTask();
@@ -82,9 +65,7 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
       }, 0);
       return;
     }
-    console.log('[DEBUG] Setting selected task (not changing_task mode):', task);
     setSelectedTask && setSelectedTask(task);
-    console.log('[DEBUG] ===== handleSelectTask END =====');
   };
 
   // Usar pendingProject/pendingTask para el botón y para la selección visual en modo changing_task
@@ -101,10 +82,7 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
 
   // Wrapper para el botón Continuar: en modo changing_task ejecuta directamente el handler del padre con los valores seleccionados actuales
   const handleContinueSafe = () => {
-    console.log('[DEBUG][ProjectTaskStep] handleContinueSafe called, onContinue available?', !!onContinue);
-    console.log('[DEBUG][ProjectTaskStep] Current values - pendingProject:', pendingProject, 'pendingTask:', pendingTask);
     if (onContinue) {
-      console.log('[DEBUG][ProjectTaskStep] Calling onContinue...');
       onContinue(); // Ya no recibe argumentos
     }
   };
@@ -150,36 +128,6 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
         }}
         hideTitle={mode === "changing_task"}
       />
-      {/* Campo de progreso solo en modo changing_task */}
-      {mode === "changing_task" && (
-        <View style={{ marginVertical: 10 }}>
-          <Text style={styles.message}>Avance:</Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 8,
-              padding: 8,
-              marginBottom: 12,
-              width: "100%",
-              fontSize: 16,
-            }}
-            placeholder="Introduce un valor entre 1 y 100"
-            keyboardType="number-pad"
-            value={progressInput ?? ""}
-            onChangeText={(val: string) => {
-              let num = val.replace(/[^0-9]/g, "");
-              if (num === "") {
-                setProgressInput && setProgressInput("");
-                return;
-              }
-              if (parseInt(num) > 100) num = "100";
-              setProgressInput && setProgressInput(num);
-            }}
-            maxLength={3}
-          />
-        </View>
-      )}
       <View
         style={
           mode === "welcome"

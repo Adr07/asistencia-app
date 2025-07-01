@@ -13,9 +13,9 @@
 // - progressInput, setProgressInput: input y setter para progreso (puede ser requerido para habilitar el botón)
 
 import React from "react";
-import { View, Text, Button, ScrollView } from "react-native";
-import ProyectList from "../otros/ProyectList";
+import { Button, ScrollView, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
+import ProyectList from "../otros/ProyectList";
 import { WelcomeStepProps } from "./AttendanceStepTypes";
 
 /**
@@ -27,29 +27,14 @@ export function WelcomeStep(props: WelcomeStepProps) {
   const {
     loading,
     onCheckIn,
-    onLogout,
     selectedProject,
     selectedTask,
     setSelectedProject,
     setSelectedTask,
     uid,
     pass,
-    description,
-    setDescription,
     onCancel,
-    onContinue,
   } = props;
-
-  React.useEffect(() => {
-    console.log('[DEBUG][WelcomeStep] selectedProject:', selectedProject);
-    console.log('[DEBUG][WelcomeStep] selectedTask:', selectedTask);
-    if (selectedProject) {
-      console.log('[DEBUG][WelcomeStep] selectedProject.id:', selectedProject.id);
-    }
-    if (selectedTask) {
-      console.log('[DEBUG][WelcomeStep] selectedTask.id:', selectedTask.id);
-    }
-  }, [selectedProject, selectedTask]);
 
       // Utilidad para saber si la tarea seleccionada está completada
   const isSelectedTaskDone = selectedTask && selectedTask.stage_id && selectedTask.stage_id[1] &&
@@ -71,13 +56,6 @@ export function WelcomeStep(props: WelcomeStepProps) {
         onSelectProject={setSelectedProject}
         onSelectTask={setSelectedTask}
       />
-      {/* Debug visual de selección */}
-      <Text style={{ color: 'red', fontSize: 12, marginTop: 8 }}>
-        Proyecto seleccionado: {selectedProject ? JSON.stringify(selectedProject) : 'Ninguno'}
-      </Text>
-      <Text style={{ color: 'red', fontSize: 12, marginBottom: 8 }}>
-        Tarea seleccionada: {selectedTask ? JSON.stringify(selectedTask) : 'Ninguna'}
-      </Text>
       {/* Botones de acción */}
       <View style={styles.buttonRow}>
         <View style={[styles.button, { backgroundColor: "#bdbdbd" }]}> 
