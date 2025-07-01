@@ -84,4 +84,7 @@ export interface ProjectTaskStepProps {
   handleChangeTaskFlow?: (pendingProject: Project | null, pendingTask: Task | null) => void | Promise<void>;
   progressInput?: string;
   setProgressInput?: (progress: string) => void;
+  // Nuevas props para identificar la tarea actual (anterior)
+  currentProject?: Project | null;
+  currentTask?: Task | null;
 }

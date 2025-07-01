@@ -40,6 +40,8 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     safeSetPendingTask,
     progressInput,
     setProgressInput,
+    currentProject, // <-- NUEVA PROP: proyecto actual (anterior)
+    currentTask,    // <-- NUEVA PROP: tarea actual (anterior)
   } = props;
 
   // En modo changing_task, solo actualizar pendingProject/pendingTask, no selectedProject/selectedTask
@@ -127,6 +129,8 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
           handleSelectTask(task);
         }}
         hideTitle={mode === "changing_task"}
+        currentProject={mode === "changing_task" ? currentProject : undefined}
+        currentTask={mode === "changing_task" ? currentTask : undefined}
       />
       <View
         style={

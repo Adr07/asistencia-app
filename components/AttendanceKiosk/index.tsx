@@ -273,6 +273,9 @@ export default function AttendanceKiosk(props: {
         onNext={handleNextFromCheckedIn}
         onRestart={handleRestartFromCheckedOut}
         onContinue={step === "changing_task" || showChangingTask ? handleContinueFromChangingTask : handleContinueFromProjectTask}
+        // Agregar las props para la tarea actual (anterior)
+        currentProject={selectedProject}
+        currentTask={selectedTask}
       />
     </View>
   );

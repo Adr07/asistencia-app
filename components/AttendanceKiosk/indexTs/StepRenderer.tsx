@@ -45,6 +45,8 @@ export function StepRenderer({
             handleChangeTaskFlow={props.handleChangeTaskFlow}
             progressInput={props.progressInput}
             setProgressInput={props.setProgressInput}
+            currentProject={props.currentProject}
+            currentTask={props.currentTask}
           />
         );
       }
@@ -73,6 +75,8 @@ export function StepRenderer({
           handleChangeTaskFlow={props.handleChangeTaskFlow}
           progressInput={props.progressInput}
           setProgressInput={props.setProgressInput}
+          currentProject={props.currentProject}
+          currentTask={props.currentTask}
         />
       );
     case "checked_in":
@@ -134,6 +138,8 @@ export function StepRenderer({
           safeSetPendingProject={props.safeSetPendingProject}
           safeSetPendingTask={props.safeSetPendingTask}
           handleChangeTaskFlow={props.handleChangeTaskFlow}
+          currentProject={props.currentProject}
+          currentTask={props.currentTask}
         />
       );
     case "checked_out":

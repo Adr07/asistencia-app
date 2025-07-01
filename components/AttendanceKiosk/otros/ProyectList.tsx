@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DB, RPC_URL } from './config';
 import { ProyectListStyles } from './PoryectListSytyle';
@@ -13,9 +13,12 @@ interface ProyectListProps {
   onSelectTask: (tarea: any) => void;
   selectedTask: any;
   hideTitle?: boolean;
+  // Nuevas props para identificar y deshabilitar la tarea actual
+  currentProject?: any;
+  currentTask?: any;
 }
 
-export default function ProyectList({ uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle }: ProyectListProps) {
+export default function ProyectList({ uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle, currentProject, currentTask }: ProyectListProps) {
   console.log('[DEBUG][ProyectList] Props received:', {
     uid,
     pass,
@@ -67,7 +70,7 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   }, [uid, pass]);
 
   // Mover fetchTasks fuera del useEffect para que esté disponible globalmente
-  async function fetchTasks(projectId: number) {
+  const fetchTasks = useCallback(async (projectId: number) => {
     setLoadingTasks(projectId);
     console.log('[DEBUG][fetchTasks] solicitando tareas para proyecto', projectId);
     try {
@@ -92,14 +95,14 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
     } finally {
       setLoadingTasks(null);
     }
-  }
+  }, [uid, pass]);
 
   // useEffect para cargar tareas cuando cambia el proyecto seleccionado
   useEffect(() => {
     if (selectedProject && !tareas[selectedProject.id]) {
       fetchTasks(selectedProject.id);
     }
-  }, [selectedProject, uid, pass, tareas]);
+  }, [selectedProject, uid, pass, tareas, fetchTasks]);
 
   // Filtrar proyectos para excluir el proyecto interno (id 1 o nombre que contenga "interno")
   const proyectosFiltrados = proyectos.filter(
@@ -180,23 +183,32 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
                           // Detectar tarea completada por stage_id (completado)
                           const isDone = tarea.stage_id && tarea.stage_id[1] &&
                             (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
+                          
+                          // Detectar si es la tarea actual (anterior) que no se puede seleccionar
+                          const isCurrentTask = currentTask && currentTask.id === tarea.id && 
+                                               currentProject && currentProject.id === proyecto.id;
+                          
                           return (
                             <TouchableOpacity
                               key={tarea.id}
                               style={[
                                 ProyectListStyles.taskItem,
                                 selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
-                                isDone && styles.completedTaskGreen
+                                isDone && styles.completedTaskGreen,
+                                isCurrentTask && styles.currentTaskDisabled // Estilo para tarea actual
                               ]}
-                              onPress={() => !isDone && handleSelectTask(tarea)}
-                              activeOpacity={isDone ? 1 : 0.7}
-                              disabled={isDone}
+                              onPress={() => !isDone && !isCurrentTask && handleSelectTask(tarea)}
+                              activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
+                              disabled={isDone || isCurrentTask} // Deshabilitar si está completada O es la tarea actual
                             >
                               <Text style={[
                                 ProyectListStyles.taskName,
-                                isDone && styles.completedTaskTextGreen
+                                isDone && styles.completedTaskTextGreen,
+                                isCurrentTask && styles.currentTaskTextDisabled // Estilo de texto para tarea actual
                               ]}>
-                                {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''} {isDone ? '✔️' : ''}
+                                {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''} 
+                                {isDone ? ' ✔️' : ''} 
+                                {isCurrentTask ? ' (Tarea Actual)' : ''}
                               </Text>
                             </TouchableOpacity>
                           );
@@ -227,6 +239,18 @@ const styles = StyleSheet.create({
     color: '#388e3c',
     fontWeight: 'bold',
     textDecorationLine: 'line-through',
+  },
+  // Estilos para la tarea actual (que no se puede seleccionar)
+  currentTaskDisabled: {
+    backgroundColor: '#fff3e0', // Color naranja claro
+    borderColor: '#ff9800', // Borde naranja
+    borderWidth: 1,
+    opacity: 0.7, // Reducir opacidad para mostrar que está deshabilitada
+  },
+  currentTaskTextDisabled: {
+    color: '#e65100', // Texto naranja oscuro
+    fontWeight: 'bold',
+    fontStyle: 'italic',
   },
   completedTask: {}, // legacy, no usar
   completedTaskText: {}, // legacy, no usar
