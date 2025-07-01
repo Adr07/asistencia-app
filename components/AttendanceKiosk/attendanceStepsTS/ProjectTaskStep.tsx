@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text, Button, ScrollView } from "react-native";
-import ProyectList from "../otros/ProyectList";
+import { Button, ScrollView, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
+import ProyectList from "../otros/ProyectList";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
 
 declare global {
@@ -12,6 +12,14 @@ declare global {
 }
 
 export function ProjectTaskStep(props: ProjectTaskStepProps) {
+  console.log('[DEBUG][ProjectTaskStep] Props received:', {
+    mode: props.mode,
+    pendingProject: props.pendingProject,
+    pendingTask: props.pendingTask,
+    safeSetPendingProject: !!props.safeSetPendingProject,
+    safeSetPendingTask: !!props.safeSetPendingTask
+  });
+  
   const {
     loading,
     uid,
@@ -32,13 +40,20 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     pendingTask,
     setPendingProject,
     setPendingTask,
+    safeSetPendingProject,
+    safeSetPendingTask,
     handleChangeTaskFlow,
   } = props;
 
   // En modo changing_task, solo actualizar pendingProject/pendingTask, no selectedProject/selectedTask
   const handleSelectProject = (project: any) => {
-    if (props.mode === "changing_task" && props.setPendingProject) {
-      props.setPendingProject(project);
+    console.log('[DEBUG] ===== handleSelectProject START =====');
+    console.log('[DEBUG] handleSelectProject called with:', project, 'mode:', mode);
+    console.log('[DEBUG] safeSetPendingProject available?', !!safeSetPendingProject);
+    if (mode === "changing_task" && safeSetPendingProject) {
+      console.log('[DEBUG] Setting pending project:', project);
+      safeSetPendingProject(project);
+      console.log('[DEBUG] After setting pending project');
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.__logPendingProject) {
           window.__logPendingProject();
@@ -46,11 +61,18 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
       }, 0);
       return;
     }
-    props.setSelectedProject && props.setSelectedProject(project);
+    console.log('[DEBUG] Setting selected project (not changing_task mode):', project);
+    setSelectedProject && setSelectedProject(project);
+    console.log('[DEBUG] ===== handleSelectProject END =====');
   };
   const handleSelectTask = (task: any) => {
-    if (props.mode === "changing_task" && props.setPendingTask) {
-      props.setPendingTask(task);
+    console.log('[DEBUG] ===== handleSelectTask START =====');
+    console.log('[DEBUG] handleSelectTask called with:', task, 'mode:', mode);
+    console.log('[DEBUG] safeSetPendingTask available?', !!safeSetPendingTask);
+    if (mode === "changing_task" && safeSetPendingTask) {
+      console.log('[DEBUG] Setting pending task:', task);
+      safeSetPendingTask(task);
+      console.log('[DEBUG] After setting pending task');
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.__logPendingTask) {
           window.__logPendingTask();
@@ -58,7 +80,9 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
       }, 0);
       return;
     }
-    props.setSelectedTask && props.setSelectedTask(task);
+    console.log('[DEBUG] Setting selected task (not changing_task mode):', task);
+    setSelectedTask && setSelectedTask(task);
+    console.log('[DEBUG] ===== handleSelectTask END =====');
   };
 
   // Usar pendingProject/pendingTask para el botón y para la selección visual en modo changing_task
@@ -75,7 +99,10 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
 
   // Wrapper para el botón Continuar: en modo changing_task ejecuta directamente el handler del padre con los valores seleccionados actuales
   const handleContinueSafe = () => {
+    console.log('[DEBUG][ProjectTaskStep] handleContinueSafe called, onContinue available?', !!onContinue);
+    console.log('[DEBUG][ProjectTaskStep] Current values - pendingProject:', pendingProject, 'pendingTask:', pendingTask);
     if (onContinue) {
+      console.log('[DEBUG][ProjectTaskStep] Calling onContinue...');
       onContinue(); // Ya no recibe argumentos
     }
   };
@@ -91,8 +118,12 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     if (mode === "changing_task") {
       console.log('[DEBUG][ProjectTaskStep] pendingProject:', pendingProject);
       console.log('[DEBUG][ProjectTaskStep] pendingTask:', pendingTask);
+      console.log('[DEBUG][ProjectTaskStep] projectListSelectedProject:', projectListSelectedProject);
+      console.log('[DEBUG][ProjectTaskStep] projectListSelectedTask:', projectListSelectedTask);
+      const isDisabled = mode === "changing_task" ? (loading || !pendingProject || !pendingTask) : (loading || !selectedProject || !selectedTask);
+      console.log('[DEBUG][ProjectTaskStep] Continue button disabled?', isDisabled);
     }
-  }, [mode, pendingProject, pendingTask]);
+  }, [mode, pendingProject, pendingTask, loading, selectedProject, selectedTask, projectListSelectedProject, projectListSelectedTask]);
 
   return (
     <ScrollView
@@ -107,8 +138,14 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
         pass={pass}
         selectedProject={projectListSelectedProject}
         selectedTask={projectListSelectedTask}
-        onSelectProject={handleSelectProject}
-        onSelectTask={handleSelectTask}
+        onSelectProject={(project) => {
+          console.log('[DEBUG] ProyectList onSelectProject wrapper called with:', project);
+          handleSelectProject(project);
+        }}
+        onSelectTask={(task) => {
+          console.log('[DEBUG] ProyectList onSelectTask wrapper called with:', task);
+          handleSelectTask(task);
+        }}
         hideTitle={mode === "changing_task"}
       />
       <View

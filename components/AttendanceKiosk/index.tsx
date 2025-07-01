@@ -1,15 +1,15 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 import * as attendanceHooks from "../../hooks/otros/attendanceHooks";
-import styles from "./AttendanceStyles";
 import useThemeColors from "../../hooks/useThemeColors";
-import { useUserName, usePendingTaskState } from "./indexTs/useAttendanceKioskLogic";
+import { handleChangeTask } from '../../ts/handleChangeTask';
+import styles from "./AttendanceStyles";
 import { StepRenderer } from "./indexTs/StepRenderer";
 import {
   useCheckOutWithProgress,
   useStartChangingTask,
 } from "./indexTs/attendanceHandlers";
-import { handleChangeTask } from '../../ts/handleChangeTask';
+import { usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
 import { RPC_URL } from "./otros/config";
 
 /**
@@ -99,7 +99,15 @@ export default function AttendanceKiosk(props: {
     setStep,
   });
   // Handler robusto para cambio de tarea (flujo completo de sign_out y sign_in)
-  const handleChangeTaskFlow = async (pendingProject: any, pendingTask: any) => {
+  const handleChangeTaskFlow = React.useCallback(async (pendingProject: any, pendingTask: any) => {
+    console.log('[DEBUG] handleChangeTaskFlow called with:', { pendingProject, pendingTask });
+    
+    if (!pendingProject || !pendingTask) {
+      console.error('[DEBUG] pendingProject or pendingTask is null/undefined');
+      showMessage && showMessage('Error', 'Por favor selecciona un proyecto y una tarea antes de continuar.');
+      return;
+    }
+    
     // Usar los valores guardados antes del cambio
     const prevProject = lastProject;
     const prevTask = lastTask;
@@ -136,9 +144,29 @@ export default function AttendanceKiosk(props: {
       setPendingTask(null);
       setShowChangingTask(false);
     } catch (error) {
+      console.error('Error en handleChangeTaskFlow:', error);
       showMessage && showMessage('Error', 'Ocurrió un error al intentar cambiar de tarea.');
     }
-  };
+  }, [
+    lastProject,
+    lastTask,
+    fetchEmployeeId,
+    props.uid,
+    props.pass,
+    setCheckOutTime,
+    setLastCheckOutTimestamp,
+    setStep,
+    setSelectedProject,
+    setSelectedTask,
+    setDescription,
+    setLoading,
+    showMessage,
+    description,
+    checkInTimestamp,
+    setPendingProject,
+    setPendingTask,
+    setShowChangingTask
+  ]);
 
   // Handler para avanzar desde CheckedInStep
   const handleNextFromCheckedIn = () => {
@@ -165,16 +193,19 @@ export default function AttendanceKiosk(props: {
 
   // --- Renderizado principal ---
   // El botón "Continuar" ejecuta handleChangeTaskFlow solo en modo cambio de tarea
-  const getOnContinue = () => {
-    if (step === "changing_task" || showChangingTask) {
-      return handleChangeTaskFlow;
-    }
-    return handleContinueFromProjectTask;
-  };
+  const handleContinueFromChangingTask = React.useCallback(() => {
+    console.log('[DEBUG] handleContinueFromChangingTask: About to call handleChangeTaskFlow with:', { pendingProject, pendingTask });
+    handleChangeTaskFlow(pendingProject, pendingTask);
+  }, [pendingProject, pendingTask, handleChangeTaskFlow]);
 
   React.useEffect(() => {
-    // ...
+    console.log('[DEBUG] pendingProject or pendingTask changed:', { pendingProject, pendingTask });
   }, [pendingProject, pendingTask]);
+
+  React.useEffect(() => {
+    console.log('[DEBUG] step or showChangingTask changed:', { step, showChangingTask });
+    console.log('[DEBUG] onContinue function will be:', step === "changing_task" || showChangingTask ? 'handleContinueFromChangingTask' : 'handleContinueFromProjectTask');
+  }, [step, showChangingTask]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, marginTop: 50 }]}> 
@@ -231,7 +262,7 @@ export default function AttendanceKiosk(props: {
         setShowChangingTask={setShowChangingTask}
         onNext={handleNextFromCheckedIn}
         onRestart={handleRestartFromCheckedOut}
-        onContinue={getOnContinue()}
+        onContinue={step === "changing_task" || showChangingTask ? handleContinueFromChangingTask : handleContinueFromProjectTask}
       />
     </View>
   );

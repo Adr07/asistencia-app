@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { rpcCall } from './rpc';
-import { RPC_URL, DB } from './config';
-import { showMessage } from './util';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { DB, RPC_URL } from './config';
 import { ProyectListStyles } from './PoryectListSytyle';
+import { rpcCall } from './rpc';
+import { showMessage } from './util';
 
 interface ProyectListProps {
   uid: number;
@@ -16,7 +16,15 @@ interface ProyectListProps {
 }
 
 export default function ProyectList({ uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle }: ProyectListProps) {
-  // console.log('[DEBUG][ProyectList] Render', { uid, pass, selectedProject, selectedTask });
+  console.log('[DEBUG][ProyectList] Props received:', {
+    uid,
+    pass,
+    selectedProject,
+    selectedTask,
+    onSelectProject: !!onSelectProject,
+    onSelectTask: !!onSelectTask,
+    hideTitle
+  });
 
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [tareas, setTareas] = useState<{ [key: number]: any[] }>({});
@@ -100,12 +108,20 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
 
   // Handler para selección de proyecto
   const handleSelectProject = (proyecto: any) => {
+    console.log('[DEBUG][ProyectList] handleSelectProject internal called with:', proyecto);
+    console.log('[DEBUG][ProyectList] About to call onSelectProject with:', proyecto);
+    console.log('[DEBUG][ProyectList] onSelectProject function:', onSelectProject);
     onSelectProject(proyecto);
+    console.log('[DEBUG][ProyectList] onSelectProject called successfully');
   };
 
   // Handler para selección de tarea
   const handleSelectTask = (tarea: any) => {
+    console.log('[DEBUG][ProyectList] handleSelectTask internal called with:', tarea);
+    console.log('[DEBUG][ProyectList] About to call onSelectTask with:', tarea);
+    console.log('[DEBUG][ProyectList] onSelectTask function:', onSelectTask);
     onSelectTask(tarea);
+    console.log('[DEBUG][ProyectList] onSelectTask called successfully');
   };
 
   // Handler para expandir/plegar proyectos

@@ -1,10 +1,9 @@
 import React from "react";
 import {
-  WelcomeStep,
+  BeforeCheckoutStep,
   CheckedInStep,
   CheckedOutStep,
-  BeforeCheckoutStep,
-  ProjectTaskStep,
+  ProjectTaskStep
 } from "../AttendanceSteps";
 
 /**
@@ -28,10 +27,22 @@ export function StepRenderer({
             pass={pass}
             onCheckIn={props.handleCheckIn}
             onLogout={props.onLogout}
-            progressInput={props.progressInput}
-            setProgressInput={props.setProgressInput}
             onContinue={props.onContinue}
-            {...props}
+            // Pass only the props defined in ProjectTaskStepProps
+            loading={props.loading}
+            selectedProject={props.selectedProject}
+            selectedTask={props.selectedTask}
+            setSelectedProject={props.setSelectedProject}
+            setSelectedTask={props.setSelectedTask}
+            description={props.description}
+            setDescription={props.setDescription}
+            pendingProject={props.pendingProject}
+            pendingTask={props.pendingTask}
+            setPendingProject={props.setPendingProject}
+            setPendingTask={props.setPendingTask}
+            safeSetPendingProject={props.safeSetPendingProject}
+            safeSetPendingTask={props.safeSetPendingTask}
+            handleChangeTaskFlow={props.handleChangeTaskFlow}
           />
         );
       }
@@ -42,10 +53,22 @@ export function StepRenderer({
           pass={pass}
           onCheckIn={props.handleCheckIn}
           onLogout={props.onLogout}
-          progressInput={props.progressInput}
-          setProgressInput={props.setProgressInput}
           onContinue={props.onContinue}
-          {...props}
+          // Pass only the props defined in ProjectTaskStepProps
+          loading={props.loading}
+          selectedProject={props.selectedProject}
+          selectedTask={props.selectedTask}
+          setSelectedProject={props.setSelectedProject}
+          setSelectedTask={props.setSelectedTask}
+          description={props.description}
+          setDescription={props.setDescription}
+          pendingProject={props.pendingProject}
+          pendingTask={props.pendingTask}
+          setPendingProject={props.setPendingProject}
+          setPendingTask={props.setPendingTask}
+          safeSetPendingProject={props.safeSetPendingProject}
+          safeSetPendingTask={props.safeSetPendingTask}
+          handleChangeTaskFlow={props.handleChangeTaskFlow}
         />
       );
     case "checked_in":
@@ -67,7 +90,12 @@ export function StepRenderer({
         <BeforeCheckoutStep
           onCheckOut={props.handleCheckOutWithProgress}
           onChangeTask={props.startChangingTask}
-          {...props}
+          workedHours={props.workedHours}
+          loading={props.loading}
+          timer={props.timer}
+          formatTimer={props.formatTimer}
+          description={props.description}
+          setDescription={props.setDescription}
         />
       );
     case "changing_task":
@@ -78,15 +106,7 @@ export function StepRenderer({
           pass={pass}
           onCheckIn={props.handleCheckIn}
           onLogout={props.onLogout}
-          progressInput={props.progressInput}
-          setProgressInput={props.setProgressInput}
-          onContinue={() =>
-            props.handleChangeTaskFlow(props.pendingProject, props.pendingTask)
-          }
-          setPendingProject={props.setPendingProject}
-          setPendingTask={props.setPendingTask}
-          pendingProject={props.pendingProject}
-          pendingTask={props.pendingTask}
+          onContinue={props.onContinue}
           onCancel={() => {
             // Al cancelar, volver al paso anterior y limpiar selección temporal
             if (props.setShowChangingTask) props.setShowChangingTask(false);
@@ -94,7 +114,22 @@ export function StepRenderer({
             if (props.setPendingTask) props.setPendingTask(null);
             if (props.setStep) props.setStep("before_checkout");
           }}
-          {...props}
+          // Pass only the props defined in ProjectTaskStepProps
+          loading={props.loading}
+          selectedProject={props.selectedProject}
+          selectedTask={props.selectedTask}
+          // For changing_task mode, use the wrapper functions as the setters
+          setSelectedProject={props.safeSetPendingProject}
+          setSelectedTask={props.safeSetPendingTask}
+          description={props.description}
+          setDescription={props.setDescription}
+          pendingProject={props.pendingProject}
+          pendingTask={props.pendingTask}
+          setPendingProject={props.setPendingProject}
+          setPendingTask={props.setPendingTask}
+          safeSetPendingProject={props.safeSetPendingProject}
+          safeSetPendingTask={props.safeSetPendingTask}
+          handleChangeTaskFlow={props.handleChangeTaskFlow}
         />
       );
     case "checked_out":
@@ -102,7 +137,9 @@ export function StepRenderer({
         <CheckedOutStep
           onRestart={props.onRestart}
           onLogout={props.onLogout}
-          {...props}
+          checkOutTime={props.checkOutTime}
+          workedHours={props.workedHours}
+          fullTime={props.fullTime}
         />
       );
     default:

@@ -77,5 +77,7 @@ export interface ProjectTaskStepProps {
   pendingTask?: Task | null;
   setPendingProject?: (project: Project | null) => void;
   setPendingTask?: (task: Task | null) => void;
+  safeSetPendingProject?: (project: Project | null) => void;
+  safeSetPendingTask?: (task: Task | null) => void;
   handleChangeTaskFlow?: (pendingProject: Project | null, pendingTask: Task | null) => void | Promise<void>;
 }
