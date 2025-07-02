@@ -98,6 +98,15 @@ El código está libre de logs de debug. Para depurar:
 - **Operaciones**: Create, Read, Update via JSON-RPC
 - **Autenticación**: Usuario y contraseña de Odoo
 
+### Gestión de ubicación y seguridad
+
+- **Permisos obligatorios**: La app no funciona sin permisos de ubicación
+- **Verificación en tiempo real**: Validación de GPS antes de cada operación
+- **Manejo de errores robusto**: No se generan errores internos si GPS está desactivado
+- **Mensajes claros**: Alertas específicas para cada tipo de problema de ubicación
+- **Funcionalidad de bloqueo**: La app se pausa hasta resolver problemas de ubicación
+- **Captura de coordenadas**: GPS incluido en cada registro de asistencia
+
 ### Gestión de estado
 
 - **Hooks personalizados**: Separación clara de responsabilidades
@@ -111,6 +120,16 @@ El código está libre de logs de debug. Para depurar:
 - **Zona horaria**: UTC para almacenamiento, local para visualización
 
 ## Mejoras implementadas
+
+### v1.3 - Manejo robusto de errores de ubicación
+
+- ✅ Eliminación completa de errores internos cuando GPS está desactivado
+- ✅ Mensajes de error claros y específicos para cada situación
+- ✅ Manejo seguro de excepciones en hooks de ubicación
+- ✅ Alerta visual en la app cuando no hay ubicación disponible
+- ✅ Bloqueo de la aplicación cuando no se pueden obtener permisos
+- ✅ Función de reintentar para verificar ubicación
+- ✅ No generación de logs internos que confundan al usuario
 
 ### v1.2 - Implementación de geolocalización
 

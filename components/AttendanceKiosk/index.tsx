@@ -1,14 +1,16 @@
 import React from "react";
 import { Text, View } from "react-native";
 import * as attendanceHooks from "../../hooks/otros/attendanceHooks";
+import { useLocation } from "../../hooks/useLocation";
 import useThemeColors from "../../hooks/useThemeColors";
 import { handleChangeTask } from '../../ts/handleChangeTask';
 import { useProgress } from '../../ts/useProgress';
+import { LocationAlert } from "../LocationAlert";
 import styles from "./AttendanceStyles";
 import { StepRenderer } from "./indexTs/StepRenderer";
 import {
-  useCheckOutWithProgress,
-  useStartChangingTask,
+    useCheckOutWithProgress,
+    useStartChangingTask,
 } from "./indexTs/attendanceHandlers";
 import { usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
 import { RPC_URL } from "./otros/config";
@@ -80,6 +82,35 @@ export default function AttendanceKiosk(props: {
     checkInTimestamp, // Timestamp de check-in inicial
     currentTaskStartTimestamp, setCurrentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
   } = attendanceHooks.useAttendanceMain(props);
+
+  // Hook de ubicación para verificar errores
+  const { error: locationError, getCurrentLocation } = useLocation();
+  
+  // Estado para mostrar alerta de ubicación
+  const [showLocationAlert, setShowLocationAlert] = React.useState(false);
+  const [locationAlertMessage, setLocationAlertMessage] = React.useState("");
+
+  // Función para verificar ubicación antes de acciones importantes
+  const checkLocationBeforeAction = React.useCallback(async () => {
+    const location = await getCurrentLocation();
+    if (!location) {
+      const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
+      setLocationAlertMessage(message);
+      setShowLocationAlert(true);
+      return false;
+    }
+    return true;
+  }, [getCurrentLocation, locationError]);
+
+  // Función para retry de ubicación
+  const handleLocationRetry = React.useCallback(async () => {
+    setShowLocationAlert(false);
+    const hasLocation = await checkLocationBeforeAction();
+    if (!hasLocation) {
+      // Si sigue sin funcionar, mantener la alerta
+      setTimeout(() => setShowLocationAlert(true), 500);
+    }
+  }, [checkLocationBeforeAction]);
 
   // --- Handlers extraídos a hooks personalizados ---
   // Handler para check-out con progreso y descripción actual
@@ -267,6 +298,14 @@ export default function AttendanceKiosk(props: {
         // Agregar las props para la tarea actual (anterior)
         currentProject={selectedProject}
         currentTask={selectedTask}
+      />
+      
+      {/* Alerta de ubicación */}
+      <LocationAlert
+        visible={showLocationAlert}
+        message={locationAlertMessage}
+        onRetry={handleLocationRetry}
+        onCancel={() => setShowLocationAlert(false)}
       />
     </View>
   );

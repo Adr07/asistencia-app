@@ -1,2 +1,72 @@
-https://github.com/nguyenphuquang/react-native-xmlrpc concurrently
-npm install expo-location
+# Dependencias adicionales del proyecto App de Asistencia
+# Base creada con: npm create expo@latest
+# Instalar dependencias adicionales con: npm install
+
+# NOTA: Las siguientes dependencias YA VIENEN INCLUIDAS con npm create expo@latest:
+# - expo, expo-router, expo-constants, expo-dev-client, expo-splash-screen, 
+#   expo-status-bar, expo-updates, expo-font, expo-linking, expo-system-ui
+# - react, react-dom, react-native, react-native-web
+# - @react-navigation/native, react-native-screens, react-native-safe-area-context
+# - @expo/vector-icons, expo-symbols
+# - react-native-gesture-handler, react-native-reanimated
+# - @babel/core, @types/react, typescript, eslint, eslint-config-expo
+
+# ===== DEPENDENCIAS ADICIONALES NECESARIAS =====
+
+# Navigation adicional (no incluida por defecto)
+@react-navigation/bottom-tabs
+@react-navigation/elements
+
+# UI Components adicionales
+expo-blur
+expo-image
+
+# Device Features específicas del proyecto
+expo-haptics
+expo-location
+expo-web-browser
+
+# Communication con Odoo
+react-native-webview
+react-native-xmlrpc@github:nguyenphuquang/react-native-xmlrpc
+
+# Backend/Server (opcional para desarrollo local)
+cors
+express
+
+# Development tools adicionales
+concurrently
+
+# ===== GLOBAL TOOLS (Instalar globalmente) =====
+# npm install -g @expo/cli
+# npm install -g eas-cli
+
+# ===== COMANDOS DE INSTALACIÓN =====
+# 1. Crear proyecto base:
+#    npm create expo@latest asistencia-app
+#    cd asistencia-app
+#
+# 2. Instalar dependencias adicionales necesarias:
+#    npm install @react-navigation/bottom-tabs @react-navigation/elements
+#    npm install expo-blur expo-image expo-haptics expo-location expo-web-browser
+#    npm install react-native-webview concurrently
+#    npm install github:nguyenphuquang/react-native-xmlrpc
+#
+# 3. Instalar dependencias opcionales para servidor local (opcional):
+#    npm install cors express
+#
+# 4. Instalar herramientas globales:
+#    npm install -g @expo/cli
+#    npm install -g eas-cli
+#
+# 5. Para desarrollo con React Native Debugger (opcional):
+#    npm install -g react-devtools
+#
+# 6. Verificar instalación:
+#    npx tsc --noEmit
+#    npx expo-doctor
+#
+# NOTA: 
+# - cors y express son solo necesarios si planeas ejecutar un servidor local
+# - react-native-xmlrpc es específico para comunicación con Odoo
+# - Todas las demás dependencias de Expo ya vienen incluidas por defecto

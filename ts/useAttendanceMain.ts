@@ -57,11 +57,16 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   // Función adaptadora para manejar check-in (entrada)
   const handleCheckIn = async () => {
     try {
-      // Capturar ubicación antes del check-in (sin mostrar mensaje de carga)
+      setLoading(true);
+      
+      // Capturar ubicación antes del check-in
       const currentLocation = await getCurrentLocation();
       
       if (!currentLocation) {
-        showMessage("No se pudo obtener la ubicación. Verifica que tengas GPS activado.", "error");
+        // Si no se pudo obtener ubicación, mostrar el error específico del hook
+        const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
+        showMessage("Ubicación requerida", errorMessage);
+        setLoading(false);
         return;
       }
       
@@ -85,23 +90,33 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         showMessage,
       });
     } catch (error) {
-      showMessage("Error al realizar check-in: " + (error instanceof Error ? error.message : "Error desconocido"), "error");
+      setLoading(false);
+      if (error instanceof Error && error.message.includes('ubicación')) {
+        showMessage("Ubicación requerida", error.message);
+      } else {
+        showMessage("Error al realizar check-in", error instanceof Error ? error.message : "Error desconocido");
+      }
     }
   };
 
   // Función adaptadora para manejar check-out (salida)
   const handleCheckOut = async (customDescription?: string, progress?: number) => {
     try {
+      setLoading(true);
+      
       // Mostrar advertencia si no hay proyecto/tarea, pero continuar para cerrar el registro
       if (!selectedProject || !selectedTask) {
         showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
       }
       
-      // Capturar ubicación antes del check-out (sin mostrar mensaje de carga)
+      // Capturar ubicación antes del check-out
       const currentLocation = await getCurrentLocation();
       
       if (!currentLocation) {
-        showMessage("No se pudo obtener la ubicación. Verifica que tengas GPS activado.", "error");
+        // Si no se pudo obtener ubicación, mostrar el error específico del hook
+        const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
+        showMessage("Ubicación requerida", errorMessage);
+        setLoading(false);
         return;
       }
       
@@ -136,7 +151,12 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       setCheckInLocation(null);
       setCheckOutLocation(null);
     } catch (error) {
-      showMessage("Error al realizar check-out: " + (error instanceof Error ? error.message : "Error desconocido"), "error");
+      setLoading(false);
+      if (error instanceof Error && error.message.includes('ubicación')) {
+        showMessage("Ubicación requerida", error.message);
+      } else {
+        showMessage("Error al realizar check-out", error instanceof Error ? error.message : "Error desconocido");
+      }
     }
   };
 

@@ -88,6 +88,7 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
   // Debug para ver qué proyecto/tarea se selecciona en modo changing_task
   React.useEffect(() => {
     if (mode === "changing_task") {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const isDisabled = mode === "changing_task" ? (loading || !pendingProject || !pendingTask) : (loading || !selectedProject || !selectedTask);
     }
   }, [mode, pendingProject, pendingTask, loading, selectedProject, selectedTask, projectListSelectedProject, projectListSelectedTask]);

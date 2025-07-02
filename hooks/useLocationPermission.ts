@@ -33,9 +33,11 @@ export function useLocationPermission(): LocationPermissionState {
       
       const { status } = await Location.getForegroundPermissionsAsync();
       setHasPermission(status === 'granted');
-    } catch (err) {
-      setError('Error al verificar permisos de ubicación');
-      console.error('Error checking location permission:', err);
+    } catch {
+      // Manejo seguro de errores sin generar errores internos
+      setError('Error al verificar permisos de ubicación. Por favor, reinicia la app.');
+      setHasPermission(false);
+      // No hacer console.error para evitar logs internos
     } finally {
       setIsLoading(false);
     }
@@ -54,9 +56,10 @@ export function useLocationPermission(): LocationPermissionState {
         setError('Los permisos de ubicación son obligatorios para usar esta aplicación');
         setHasPermission(false);
       }
-    } catch (err) {
-      setError('Error al solicitar permisos de ubicación');
-      console.error('Error requesting location permission:', err);
+    } catch {
+      // Manejo seguro de errores sin generar errores internos
+      setError('Error al solicitar permisos de ubicación. Intenta de nuevo o ve a configuración de la app.');
+      setHasPermission(false);
     } finally {
       setIsLoading(false);
     }
