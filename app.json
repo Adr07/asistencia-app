@@ -1,8 +1,4 @@
 {
-  "updates": {
-    "enabled": true,
-    "fallbackToCacheTimeout": 0
-  },
   "expo": {
     "name": "asistencia-app",
     "slug": "asistencia-app",
@@ -16,6 +12,11 @@
       "supportsTablet": true,
       "runtimeVersion": {
         "policy": "appVersion"
+      },
+      "updates": {
+        "enabled": true,
+        "fallbackToCacheTimeout": 0,
+        "url": "https://expo.dev/accounts/adry01/projects/asistencia-app/builds/ee285e9d-9dfe-40f5-ac23-06d972b5018c"
       }
     },
     "android": {
