@@ -1,1 +1,2 @@
 https://github.com/nguyenphuquang/react-native-xmlrpc concurrently
+npm install expo-location

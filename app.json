@@ -1,4 +1,8 @@
 {
+  "updates": {
+    "enabled": true,
+    "fallbackToCacheTimeout": 0
+  },
   "expo": {
     "name": "asistencia-app",
     "slug": "asistencia-app",
@@ -9,7 +13,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +24,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.adry01.asistenciaapp"
+      "package": "com.adry01.asistenciaapp",
+      "runtimeVersion": "1.0.0",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +38,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Esta aplicación necesita acceso a la ubicación para verificar que estés en el lugar de trabajo al registrar tu asistencia.",
+          "locationAlwaysPermission": "Esta aplicación necesita acceso a la ubicación para verificar que estés en el lugar de trabajo al registrar tu asistencia.",
+          "locationWhenInUsePermission": "Esta aplicación necesita acceso a la ubicación para verificar que estés en el lugar de trabajo al registrar tu asistencia."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -44,6 +64,9 @@
       "eas": {
         "projectId": "1968fc7e-f27a-439a-b104-402c896b8a1d"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/1968fc7e-f27a-439a-b104-402c896b8a1d"
     }
   }
 }

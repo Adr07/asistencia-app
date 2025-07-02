@@ -30,8 +30,6 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
     pendingTask,
     safeSetPendingProject,
     safeSetPendingTask,
-    progressInput,
-    setProgressInput,
     currentProject, // <-- NUEVA PROP: proyecto actual (anterior)
     currentTask,    // <-- NUEVA PROP: tarea actual (anterior)
   } = props;
