@@ -1,10 +1,10 @@
 import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
 import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
 import {
-  buildAnalyticLine,
-  calcDiffHours,
-  getNowLocalTimeString,
-  getNowUTCString,
+    buildAnalyticLine,
+    calcDiffHours,
+    getNowLocalTimeString,
+    getNowUTCString,
 } from "../utils/attendanceUtils";
 
 /**
@@ -71,6 +71,7 @@ export async function handleCheck({
       pass,
       limit: 1,
     })) as any[];
+    
     if (!empleados.length) throw new Error("Empleado no encontrado");
     const empId = empleados[0].id;
     
@@ -127,10 +128,16 @@ export async function handleCheck({
       
       // Si no hay proyecto o tarea seleccionados, solo cerrar el registro
       if (!selectedProject || !selectedTask) {
+        const checkoutVals: any = { check_out: nowUTC };
+        if (geo) {
+          checkoutVals.out_latitude = Number(geo.latitude);
+          checkoutVals.out_longitude = Number(geo.longitude);
+        }
+        
         await odooWrite({
           model: "hr.attendance",
           ids,
-          vals: { check_out: nowUTC },
+          vals: checkoutVals,
           uid,
           pass,
         });
@@ -175,6 +182,7 @@ export async function handleCheck({
       // - checkInTimestamp: para la primera tarea desde el check-in inicial
       const timestampToUse = currentTaskStartTimestamp || checkInTimestamp;
       const { diffHours, fullTimeStr } = calcDiffHours(timestampToUse);
+      
       setWorkedHours?.(Number(diffHours).toFixed(2));
       setFullTime?.(fullTimeStr);
       setDescription?.("");

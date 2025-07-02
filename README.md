@@ -9,6 +9,8 @@ Esta es una aplicación de control de asistencia desarrollada con [Expo](https:/
 - **Registro preciso de horas**: Cálculo automático de tiempo trabajado por tarea
 - **Integración con Odoo**: Sincronización automática con el sistema ERP
 - **Líneas analíticas**: Creación automática de registros de tiempo en Odoo
+- **Geolocalización**: Captura automática de coordenadas GPS en check-in/check-out
+- **Permisos obligatorios**: La app requiere permisos de ubicación para funcionar
 
 ## Arquitectura del sistema
 
@@ -109,6 +111,15 @@ El código está libre de logs de debug. Para depurar:
 - **Zona horaria**: UTC para almacenamiento, local para visualización
 
 ## Mejoras implementadas
+
+### v1.2 - Implementación de geolocalización
+
+- ✅ Permisos de ubicación obligatorios
+- ✅ Captura automática de GPS en check-in/check-out
+- ✅ Envío de coordenadas al backend de Odoo
+- ✅ Pantalla de solicitud de permisos
+- ✅ Validación de permisos antes de usar la app
+- ✅ Información de ubicación en registros de asistencia
 
 ### v1.1 - Mejoras en el cálculo de horas
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { showMessage } from "../components/AttendanceKiosk/otros/util";
+import { LocationData, useLocation } from "../hooks/useLocation";
 import { handleCheck } from "./handleCheck";
 import { useEmployeeId } from "./useEmployeeId";
 
@@ -30,6 +31,13 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
 
   // Obtener función para consultar ID del empleado
   const fetchEmployeeId = useEmployeeId(props.uid, props.pass);
+  
+  // Hook para manejo de ubicación
+  const { error: locationError, getCurrentLocation, clearLocation } = useLocation();
+  
+  // Estado para ubicación del check-in y check-out
+  const [checkInLocation, setCheckInLocation] = useState<LocationData | null>(null);
+  const [checkOutLocation, setCheckOutLocation] = useState<LocationData | null>(null);
 
   // Efecto para el timer que cuenta el tiempo transcurrido
   useEffect(() => {
@@ -48,53 +56,88 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
 
   // Función adaptadora para manejar check-in (entrada)
   const handleCheckIn = async () => {
-    await handleCheck({
-      action: 'sign_in',
-      uid: props.uid,
-      pass: props.pass,
-      selectedProject,
-      selectedTask,
-      description,
-      checkInTimestamp,
-      currentTaskStartTimestamp,
-      setCheckInTime,
-      setCheckInTimestamp,
-      setCurrentTaskStartTimestamp,
-      setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
-      setLoading,
-      showMessage,
-    });
+    try {
+      // Capturar ubicación antes del check-in (sin mostrar mensaje de carga)
+      const currentLocation = await getCurrentLocation();
+      
+      if (!currentLocation) {
+        showMessage("No se pudo obtener la ubicación. Verifica que tengas GPS activado.", "error");
+        return;
+      }
+      
+      setCheckInLocation(currentLocation);
+      
+      await handleCheck({
+        action: 'sign_in',
+        uid: props.uid,
+        pass: props.pass,
+        selectedProject,
+        selectedTask,
+        description,
+        checkInTimestamp,
+        currentTaskStartTimestamp,
+        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude }, // Usar geo en lugar de location
+        setCheckInTime,
+        setCheckInTimestamp,
+        setCurrentTaskStartTimestamp,
+        setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
+        setLoading,
+        showMessage,
+      });
+    } catch (error) {
+      showMessage("Error al realizar check-in: " + (error instanceof Error ? error.message : "Error desconocido"), "error");
+    }
   };
 
   // Función adaptadora para manejar check-out (salida)
   const handleCheckOut = async (customDescription?: string, progress?: number) => {
-    // Mostrar advertencia si no hay proyecto/tarea, pero continuar para cerrar el registro
-    if (!selectedProject || !selectedTask) {
-      showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
+    try {
+      // Mostrar advertencia si no hay proyecto/tarea, pero continuar para cerrar el registro
+      if (!selectedProject || !selectedTask) {
+        showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
+      }
+      
+      // Capturar ubicación antes del check-out (sin mostrar mensaje de carga)
+      const currentLocation = await getCurrentLocation();
+      
+      if (!currentLocation) {
+        showMessage("No se pudo obtener la ubicación. Verifica que tengas GPS activado.", "error");
+        return;
+      }
+      
+      setCheckOutLocation(currentLocation);
+      
+      await handleCheck({
+        action: 'sign_out',
+        uid: props.uid,
+        pass: props.pass,
+        selectedProject,
+        selectedTask,
+        description: typeof customDescription === 'string' ? customDescription : description,
+        progress,
+        checkInTimestamp,
+        currentTaskStartTimestamp,
+        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude }, // Usar geo en lugar de location
+        setCheckOutTime,
+        setCurrentTaskStartTimestamp,
+        setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
+        setWorkedHours,
+        setFullTime,
+        setLoading,
+        showMessage,
+        // Limpiar estado después del check-out
+        setDescription: () => setDescription(""),
+        setSelectedProject: () => setSelectedProject(null),
+        setSelectedTask: () => setSelectedTask(null),
+      });
+      
+      // Limpiar ubicaciones después del check-out
+      clearLocation();
+      setCheckInLocation(null);
+      setCheckOutLocation(null);
+    } catch (error) {
+      showMessage("Error al realizar check-out: " + (error instanceof Error ? error.message : "Error desconocido"), "error");
     }
-    
-    await handleCheck({
-      action: 'sign_out',
-      uid: props.uid,
-      pass: props.pass,
-      selectedProject,
-      selectedTask,
-      description: typeof customDescription === 'string' ? customDescription : description,
-      progress,
-      checkInTimestamp,
-      currentTaskStartTimestamp,
-      setCheckOutTime,
-      setCurrentTaskStartTimestamp,
-      setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
-      setWorkedHours,
-      setFullTime,
-      setLoading,
-      showMessage,
-      // Limpiar estado después del check-out
-      setDescription: () => setDescription(""),
-      setSelectedProject: () => setSelectedProject(null),
-      setSelectedTask: () => setSelectedTask(null),
-    });
   };
 
   // Retornar todos los estados y funciones necesarios para el componente
@@ -125,6 +168,11 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
     setFullTime,
     lastCheckOutTimestamp,
     setLastCheckOutTimestamp,
+    // Estados y funciones de ubicación
+    checkInLocation,
+    checkOutLocation,
+    locationError,
+    getCurrentLocation,
     handleCheckIn,
     handleCheckOut,
     fetchEmployeeId,
