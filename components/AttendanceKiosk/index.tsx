@@ -1,326 +1,95 @@
 import React from "react";
 import { Text, View } from "react-native";
 import * as attendanceHooks from "../../hooks/otros/attendanceHooks";
-import { useLocation } from "../../hooks/useLocation";
 import useThemeColors from "../../hooks/useThemeColors";
-import { handleChangeTask } from '../../ts/handleChangeTask';
-import { useProgress } from '../../ts/useProgress';
 import { LocationAlert } from "../LocationAlert";
 import styles from "./AttendanceStyles";
 import { StepRenderer } from "./indexTs/StepRenderer";
-import {
-    useCheckOutWithProgress,
-    useStartChangingTask,
-} from "./indexTs/attendanceHandlers";
-import { usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
-import { RPC_URL } from "./otros/config";
+import { useAttendanceKioskLogic } from "./useAttendanceKioskLogic";
 
 /**
  * Componente principal del Kiosko de Asistencia.
  * Orquesta el flujo de registro de asistencia, cambio de tarea y check-in/check-out.
  * Toda la lógica de handlers y renderizado de pasos está extraída a hooks y componentes auxiliares.
  */
-export default function AttendanceKiosk(props: {
+
+interface AttendanceKioskProps {
   uid: number;
   pass: string;
   onLogout?: () => void;
-}) {
-  // Colores del tema
+}
+
+const AttendanceKiosk = (props: AttendanceKioskProps) => {
   const colors = useThemeColors();
-  // Obtiene el nombre e inicial del usuario desde Odoo
-  const { userName, userInitial } = useUserName(props.uid, props.pass);
-  // Estado temporal para cambio de tarea y setters protegidos
-  const {
-    pendingProject,
-    setPendingProject: _setPendingProject,
-    pendingTask,
-    setPendingTask: _setPendingTask,
-    lastDescription,
-    setLastDescription,
-    lastProgress,
-    setLastProgress,
-    lastProject, // <-- NUEVO
-    setLastProject, // <-- NUEVO
-    lastTask, // <-- NUEVO
-    setLastTask, // <-- NUEVO
-    safeSetPendingProject,
-    safeSetPendingTask,
-  } = usePendingTaskState();
-
-  // Wrappers para debug (now wrapped in useCallback to avoid useEffect dependency warning)
-  const setPendingProject = React.useCallback((project: any) => {
-    _setPendingProject(project);
-  }, [_setPendingProject]);
-  const setPendingTask = React.useCallback((task: any) => {
-    _setPendingTask(task);
-  }, [_setPendingTask]);
-
-  // Estado para el input de progreso y si se está cambiando de tarea
-  const [showChangingTask, setShowChangingTask] = React.useState(false);
-  
-  // Hook para manejar el input de progreso
-  const { progress, setProgress: setProgressInput } = useProgress();
-  // Hook principal que orquesta el estado global y lógica de asistencia
-  const {
-    step, // Paso actual del flujo (welcome, checked_in, etc)
-    loading, // Estado de carga global
-    checkInTime, setCheckInTime, // Hora de entrada y setter
-    checkOutTime, setCheckOutTime, // Hora de salida y setter
-    workedHours, setWorkedHours, // Horas trabajadas y setter
-    selectedProject, setSelectedProject, // Proyecto seleccionado y setter
-    selectedTask, setSelectedTask, // Tarea seleccionada y setter
-    setStep, // Setter del paso actual
-    onLogout, // Handler de logout
-    timer, formatTimer, // Timer y formateador
-    description, setDescription, // Descripción y setter
-    fullTime, // String de tiempo completo
-    handleCheckIn, handleCheckOut, // Handlers de check-in y check-out
-    fetchEmployeeId, // Función para obtener el id de empleado
-    setLastCheckOutTimestamp, setCheckInTimestamp, // Setters de timestamps
-    showMessage, // Función para mostrar mensajes
-    setLoading, // Setter de loading
-    checkInTimestamp, // Timestamp de check-in inicial
-    currentTaskStartTimestamp, setCurrentTaskStartTimestamp, // <-- NUEVO: timestamp de inicio de tarea actual
-  } = attendanceHooks.useAttendanceMain(props);
-
-  // Hook de ubicación para verificar errores
-  const { error: locationError, getCurrentLocation } = useLocation();
-  
-  // Estado para mostrar alerta de ubicación
-  const [showLocationAlert, setShowLocationAlert] = React.useState(false);
-  const [locationAlertMessage, setLocationAlertMessage] = React.useState("");
-
-  // Función para verificar ubicación antes de acciones importantes
-  const checkLocationBeforeAction = React.useCallback(async () => {
-    const location = await getCurrentLocation();
-    if (!location) {
-      const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
-      setLocationAlertMessage(message);
-      setShowLocationAlert(true);
-      return false;
-    }
-    return true;
-  }, [getCurrentLocation, locationError]);
-
-  // Función para retry de ubicación
-  const handleLocationRetry = React.useCallback(async () => {
-    setShowLocationAlert(false);
-    const hasLocation = await checkLocationBeforeAction();
-    if (!hasLocation) {
-      // Si sigue sin funcionar, mantener la alerta
-      setTimeout(() => setShowLocationAlert(true), 500);
-    }
-  }, [checkLocationBeforeAction]);
-
-  // --- Handlers extraídos a hooks personalizados ---
-  // Handler para check-out con progreso y descripción actual
-  const handleCheckOutWithProgress = useCheckOutWithProgress({
-    description,
-    progressInput: progress !== undefined ? progress.toString() : "",
-    selectedProject,
-    selectedTask,
-    handleCheckOut: (desc, prog) => {
-      handleCheckOut(desc, prog); // Descripción y progreso
-    },
-  });
-  // Handler para iniciar el flujo de cambio de tarea
-  const startChangingTask = useStartChangingTask({
-    description,
-    progressInput: progress !== undefined ? progress.toString() : "", // <-- PASAR EL PROGRESO ACTUAL
-    setLastDescription,
-    setLastProgress,
-    setLastProject, // <-- GUARDAR PROYECTO ANTERIOR
-    setLastTask,    // <-- GUARDAR TAREA ANTERIOR
-    selectedProject,
-    selectedTask,
-    setShowChangingTask,
-    setStep,
-  });
-  // Handler robusto para cambio de tarea (flujo completo de sign_out y sign_in)
-  const handleChangeTaskFlow = React.useCallback(async (pendingProject: any, pendingTask: any) => {
-    if (!pendingProject || !pendingTask) {
-      showMessage && showMessage('Error', 'Por favor selecciona un proyecto y una tarea antes de continuar.');
-      return;
-    }
-    
-    // Verificar ubicación antes de proceder
-    const location = await getCurrentLocation();
-    if (!location) {
-      const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
-      setLocationAlertMessage(message);
-      setShowLocationAlert(true);
-      return;
-    }
-    
-    // Usar los valores guardados antes del cambio
-    const prevProject = lastProject;
-    const prevTask = lastTask;
-    const payload = {
-      fetchEmployeeId,
-      uid: props.uid,
-      pass: props.pass,
-      setCheckOutTime,
-      setLastCheckOutTimestamp,
-      setStep: (v: string) => setStep(v as any),
-      setSelectedProject,
-      setSelectedTask,
-      setDescription,
-      setLoading,
-      showMessage,
-      RPC_URL,
-      newProject: pendingProject,
-      newTask: pendingTask,
-      prevProject, // <-- USAR LOS GUARDADOS
-      prevTask,    // <-- USAR LOS GUARDADOS
-      description,
-      progressInput: lastProgress || "", // <-- USAR lastProgress para la tarea anterior
-      checkInTimestamp,
-      currentTaskStartTimestamp, // <-- AGREGAR: timestamp de inicio de tarea actual
-      setCurrentTaskStartTimestamp, // <-- AGREGAR: setter para actualizar timestamp
-      geo: location, // <-- AGREGAR: coordenadas GPS para registro de ubicación
-    };
-    try {
-      const result = await handleChangeTask(payload);
-      if (result === false) {
-        showMessage && showMessage('Atención', 'No tienes un registro de entrada abierto. Realiza check-in antes de cambiar de tarea.');
-        setStep('welcome');
-        setLoading(false);
-        return;
-      }
-      setStep("checked_in");
-      setPendingProject(null);
-      setPendingTask(null);
-      setShowChangingTask(false);
-    } catch {
-      showMessage && showMessage('Error', 'Ocurrió un error al intentar cambiar de tarea.');
-    }
-  }, [
-    lastProject,
-    lastTask,
-    lastProgress, // <-- AGREGAR lastProgress a las dependencias
-    getCurrentLocation, // <-- AGREGAR: dependencia para obtener ubicación
-    locationError, // <-- AGREGAR: dependencia para manejo de errores de ubicación
-    setLocationAlertMessage, // <-- AGREGAR: dependencia para mostrar alertas
-    setShowLocationAlert, // <-- AGREGAR: dependencia para mostrar alertas
-    fetchEmployeeId,
-    props.uid,
-    props.pass,
-    setCheckOutTime,
-    setLastCheckOutTimestamp,
-    setStep,
-    setSelectedProject,
-    setSelectedTask,
-    setDescription,
-    setLoading,
-    showMessage,
-    description,
-    checkInTimestamp,
-    currentTaskStartTimestamp, // <-- AGREGAR: dependencia del timestamp de tarea actual
-    setCurrentTaskStartTimestamp, // <-- AGREGAR: dependencia del setter
-    setPendingProject,
-    setPendingTask,
-    setShowChangingTask
-  ]);
-
-  // Handler para avanzar desde CheckedInStep
-  const handleNextFromCheckedIn = () => {
-    setStep("before_checkout");
-    setProgressInput(""); // Limpiar progreso al avanzar
-  };
-
-  // Handler para reiniciar desde CheckedOutStep
-  const handleRestartFromCheckedOut = () => {
-    setStep("welcome");
-    setSelectedProject(null);
-    setSelectedTask(null);
-    setDescription("");
-    setCheckInTime("");
-    setCheckOutTime("");
-    setWorkedHours("");
-    setProgressInput(""); // Limpiar progreso al reiniciar
-  };
-
-  // Handler para continuar desde selección de proyecto/tarea (ProjectTaskStep)
-  const handleContinueFromProjectTask = () => {
-    setStep("checked_in");
-  };
-
-  // --- Renderizado principal ---
-  // El botón "Continuar" ejecuta handleChangeTaskFlow solo en modo cambio de tarea
-  const handleContinueFromChangingTask = React.useCallback(() => {
-    handleChangeTaskFlow(pendingProject, pendingTask);
-  }, [pendingProject, pendingTask, handleChangeTaskFlow]);
-
+  const logic = useAttendanceKioskLogic(props, attendanceHooks);
   return (
     <View style={[styles.container, { backgroundColor: colors.background, marginTop: 50 }]}> 
       {/* Avatar y título del usuario */}
       <View style={styles.centered}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{userInitial}</Text>
+          <Text style={styles.avatarText}>{logic.userInitial}</Text>
         </View>
-        <Text style={[styles.title, { color: colors.text }]}>{userName}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{logic.userName}</Text>
       </View>
-      {/* Renderizado de pasos centralizado en StepRenderer */}
       <StepRenderer
-        step={step}
-        showChangingTask={showChangingTask}
+        step={logic.step}
+        showChangingTask={logic.showChangingTask}
         uid={props.uid}
         pass={props.pass}
-        loading={loading}
-        checkInTime={checkInTime}
-        setCheckInTime={setCheckInTime}
-        checkOutTime={checkOutTime}
-        setCheckOutTime={setCheckOutTime}
-        workedHours={workedHours}
-        selectedProject={selectedProject}
-        setSelectedProject={setSelectedProject}
-        selectedTask={selectedTask}
-        setSelectedTask={setSelectedTask}
-        setStep={setStep}
-        onLogout={onLogout}
-        timer={timer}
-        formatTimer={formatTimer}
-        description={description}
-        setDescription={setDescription}
-        fullTime={fullTime}
-        handleCheckIn={handleCheckIn}
-        handleCheckOut={handleCheckOut}
-        fetchEmployeeId={fetchEmployeeId}
-        setLastCheckOutTimestamp={setLastCheckOutTimestamp}
-        setCheckInTimestamp={setCheckInTimestamp}
-        showMessage={showMessage}
-        setLoading={setLoading}
-        pendingProject={pendingProject}
-        setPendingProject={setPendingProject}
-        pendingTask={pendingTask}
-        setPendingTask={setPendingTask}
-        lastDescription={lastDescription}
-        setLastDescription={setLastDescription}
-        lastProgress={lastProgress}
-        setLastProgress={setLastProgress}
-        progressInput={progress !== undefined ? progress.toString() : ""}
-        setProgressInput={setProgressInput}
-        safeSetPendingProject={safeSetPendingProject}
-        safeSetPendingTask={safeSetPendingTask}
-        handleCheckOutWithProgress={handleCheckOutWithProgress}
-        startChangingTask={startChangingTask}
-        handleChangeTaskFlow={handleChangeTaskFlow}
-        setShowChangingTask={setShowChangingTask}
-        onNext={handleNextFromCheckedIn}
-        onRestart={handleRestartFromCheckedOut}
-        onContinue={step === "changing_task" || showChangingTask ? handleContinueFromChangingTask : handleContinueFromProjectTask}
-        // Agregar las props para la tarea actual (anterior)
-        currentProject={selectedProject}
-        currentTask={selectedTask}
+        loading={logic.loading}
+        checkInTime={logic.checkInTime}
+        setCheckInTime={logic.setCheckInTime}
+        checkOutTime={logic.checkOutTime}
+        setCheckOutTime={logic.setCheckOutTime}
+        workedHours={logic.workedHours}
+        selectedProject={logic.selectedProject}
+        setSelectedProject={logic.setSelectedProject}
+        selectedTask={logic.selectedTask}
+        setSelectedTask={logic.setSelectedTask}
+        setStep={logic.setStep}
+        onLogout={props.onLogout}
+        timer={logic.timer}
+        formatTimer={logic.formatTimer}
+        description={logic.description}
+        setDescription={logic.setDescription}
+        fullTime={logic.fullTime}
+        handleCheckIn={logic.handleCheckIn}
+        handleCheckOut={logic.handleCheckOut}
+        fetchEmployeeId={logic.fetchEmployeeId}
+        setLastCheckOutTimestamp={logic.setLastCheckOutTimestamp}
+        setCheckInTimestamp={logic.setCheckInTimestamp}
+        showMessage={logic.showMessage}
+        setLoading={logic.setLoading}
+        pendingProject={logic.pendingProject}
+        setPendingProject={logic.setPendingProject}
+        pendingTask={logic.pendingTask}
+        setPendingTask={logic.setPendingTask}
+        lastDescription={logic.lastDescription}
+        setLastDescription={logic.setLastDescription}
+        lastProgress={logic.lastProgress}
+        setLastProgress={logic.setLastProgress}
+        progressInput={logic.progress !== undefined ? logic.progress.toString() : ""}
+        setProgressInput={logic.setProgressInput}
+        safeSetPendingProject={logic.safeSetPendingProject}
+        safeSetPendingTask={logic.safeSetPendingTask}
+        handleCheckOutWithProgress={logic.handleCheckOutWithProgress}
+        startChangingTask={logic.startChangingTask}
+        handleChangeTaskFlow={logic.handleChangeTaskFlow}
+        setShowChangingTask={logic.setShowChangingTask}
+        onNext={logic.handleNextFromCheckedIn}
+        onRestart={logic.handleRestartFromCheckedOut}
+        onContinue={logic.step === "changing_task" || logic.showChangingTask ? logic.handleContinueFromChangingTask : logic.handleContinueFromProjectTask}
+        currentProject={logic.selectedProject}
+        currentTask={logic.selectedTask}
       />
-      
-      {/* Alerta de ubicación */}
       <LocationAlert
-        visible={showLocationAlert}
-        message={locationAlertMessage}
-        onRetry={handleLocationRetry}
-        onCancel={() => setShowLocationAlert(false)}
+        visible={logic.showLocationAlert}
+        message={logic.locationAlertMessage}
+        onRetry={logic.handleLocationRetry}
+        onCancel={() => logic.setShowLocationAlert(false)}
       />
     </View>
   );
-}
+};
+
+export default AttendanceKiosk;
