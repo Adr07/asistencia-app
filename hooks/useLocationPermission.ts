@@ -64,7 +64,7 @@ export function useLocationPermission(): LocationPermissionState {
       setIsLoading(false);
     }
   };
-
+  
   return {
     hasPermission,
     isLoading,

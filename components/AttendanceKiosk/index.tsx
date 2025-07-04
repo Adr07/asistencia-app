@@ -143,6 +143,15 @@ export default function AttendanceKiosk(props: {
       return;
     }
     
+    // Verificar ubicación antes de proceder
+    const location = await getCurrentLocation();
+    if (!location) {
+      const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
+      setLocationAlertMessage(message);
+      setShowLocationAlert(true);
+      return;
+    }
+    
     // Usar los valores guardados antes del cambio
     const prevProject = lastProject;
     const prevTask = lastTask;
@@ -168,6 +177,7 @@ export default function AttendanceKiosk(props: {
       checkInTimestamp,
       currentTaskStartTimestamp, // <-- AGREGAR: timestamp de inicio de tarea actual
       setCurrentTaskStartTimestamp, // <-- AGREGAR: setter para actualizar timestamp
+      geo: location, // <-- AGREGAR: coordenadas GPS para registro de ubicación
     };
     try {
       const result = await handleChangeTask(payload);
@@ -188,6 +198,10 @@ export default function AttendanceKiosk(props: {
     lastProject,
     lastTask,
     lastProgress, // <-- AGREGAR lastProgress a las dependencias
+    getCurrentLocation, // <-- AGREGAR: dependencia para obtener ubicación
+    locationError, // <-- AGREGAR: dependencia para manejo de errores de ubicación
+    setLocationAlertMessage, // <-- AGREGAR: dependencia para mostrar alertas
+    setShowLocationAlert, // <-- AGREGAR: dependencia para mostrar alertas
     fetchEmployeeId,
     props.uid,
     props.pass,

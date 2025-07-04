@@ -32,6 +32,7 @@ export async function handleChangeTask({
   checkInTimestamp,
   currentTaskStartTimestamp,
   setCurrentTaskStartTimestamp,
+  geo,
 }: {
   fetchEmployeeId?: () => Promise<number>;
   uid: number;
@@ -54,6 +55,7 @@ export async function handleChangeTask({
   checkInTimestamp?: number | null;
   currentTaskStartTimestamp?: number | null;
   setCurrentTaskStartTimestamp?: (v: number | null) => void;
+  geo?: { latitude: number; longitude: number } | null;
 }) {
   setLoading(true);
   try {
@@ -99,11 +101,22 @@ export async function handleChangeTask({
       return false;
     }
     
-    // PASO 1: Cerrar el registro de asistencia actual (check-out)
+    // PASO 1: Cerrar el registro de asistencia actual (check-out) con coordenadas GPS
+    const checkoutVals: any = { 
+      check_out: nowUTC,
+      out_mode: 'systray' // Modo de salida desde app móvil
+    };
+    if (geo) {
+      checkoutVals.out_latitude = Number(geo.latitude);
+      checkoutVals.out_longitude = Number(geo.longitude);
+      // Agregar enlace de Google Maps para ubicación de salida
+      checkoutVals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
+    }
+    
     await odooWrite({
       model: "hr.attendance",
       ids,
-      vals: { check_out: nowUTC },
+      vals: checkoutVals,
       uid,
       pass,
     });
@@ -161,13 +174,21 @@ export async function handleChangeTask({
     }
 
 
-    // PASO 3: Crear nuevo registro de asistencia para la nueva tarea (check-in)
+    // PASO 3: Crear nuevo registro de asistencia para la nueva tarea (check-in) con coordenadas GPS
     if (newProject && newTask) {
       try {
-        const checkInVals = {
+        const checkInVals: any = {
           employee_id: empId,
           check_in: nowUTC,
+          in_mode: 'systray' // Modo de entrada desde app móvil
         };
+        if (geo) {
+          checkInVals.in_latitude = Number(geo.latitude);
+          checkInVals.in_longitude = Number(geo.longitude);
+          // Agregar enlace de Google Maps para ubicación de entrada
+          checkInVals.x_in_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
+        }
+        
         await odooCreate({
           model: "hr.attendance",
           vals: checkInVals,

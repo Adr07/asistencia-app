@@ -97,6 +97,12 @@ El código está libre de logs de debug. Para depurar:
 - **Modelos utilizados**: `hr.attendance`, `account.analytic.line`, `project.project`, `project.task`
 - **Operaciones**: Create, Read, Update via JSON-RPC
 - **Autenticación**: Usuario y contraseña de Odoo
+- **Campos de geolocalización en hr.attendance**:
+  - `in_latitude`: Latitud de entrada (check-in)
+  - `in_longitude`: Longitud de entrada (check-in)
+  - `out_latitude`: Latitud de salida (check-out)  
+  - `out_longitude`: Longitud de salida (check-out)
+- **Auditoría de ubicación**: Cada registro de asistencia incluye coordenadas GPS precisas para control y seguimiento
 
 ### Gestión de ubicación y seguridad
 
@@ -105,7 +111,11 @@ El código está libre de logs de debug. Para depurar:
 - **Manejo de errores robusto**: No se generan errores internos si GPS está desactivado
 - **Mensajes claros**: Alertas específicas para cada tipo de problema de ubicación
 - **Funcionalidad de bloqueo**: La app se pausa hasta resolver problemas de ubicación
-- **Captura de coordenadas**: GPS incluido en cada registro de asistencia
+- **Captura completa de coordenadas**: GPS incluido en TODOS los registros de asistencia:
+  - **Check-in inicial**: `in_latitude`, `in_longitude`
+  - **Check-out final**: `out_latitude`, `out_longitude`
+  - **Cambio de tarea**: Coordenadas en el cierre de tarea anterior Y apertura de nueva tarea
+  - **Auditoría completa**: Trazabilidad de ubicación en cada movimiento del empleado
 
 ### Gestión de estado
 
@@ -119,7 +129,16 @@ El código está libre de logs de debug. Para depurar:
 - **Formato**: Horas decimales para Odoo, legible para UI
 - **Zona horaria**: UTC para almacenamiento, local para visualización
 
-## Mejoras implementadas
+## Mejoras implementadas 
+
+### v1.4 - Geolocalización completa en todos los registros
+
+- ✅ **Check-in inicial**: Registra `in_latitude` e `in_longitude` en el registro de asistencia
+- ✅ **Check-out final**: Registra `out_latitude` e `out_longitude` en el registro de asistencia  
+- ✅ **Cambio de tarea**: Registra coordenadas GPS tanto en el check-out de tarea anterior como en el check-in de la nueva tarea
+- ✅ **Validación obligatoria**: La app no permite continuar sin permisos de ubicación
+- ✅ **Captura automática**: Cada operación de entrada/salida incluye coordenadas precisas
+- ✅ **Persistencia en Odoo**: Todas las coordenadas se almacenan en la base de datos para auditoría
 
 ### v1.3 - Manejo robusto de errores de ubicación
 
@@ -158,6 +177,40 @@ El código está libre de logs de debug. Para depurar:
 - `utils/attendanceUtils.ts`: Utilidades de cálculo
 
 ## Recursos adicionales
+
+### 📦 Builds y Updates
+
+#### EAS Build (Para builds de producción)
+```bash
+# APK para distribución directa
+eas build --platform android --profile preview
+
+# AAB para Google Play Store  
+eas build --platform android --profile production
+
+# iOS para App Store
+eas build --platform ios --profile production
+```
+
+#### EAS Updates (Para cambios de código rápidos)
+```bash
+# Update automático
+eas update --auto --message "Fix: descripción del cambio"
+
+# Update a rama específica
+eas update --branch production --message "Update: nueva funcionalidad"
+```
+
+**⚠️ Interpretando advertencias de EAS Update:**
+
+Si ves `"No compatible builds found for the following fingerprints"`:
+- ✅ El update se publicó correctamente
+- ⚠️ No hay builds previas compatibles
+- 🔧 Solución: Ejecuta `eas build` para crear builds base compatibles
+
+Los próximos updates funcionarán sin advertencias una vez que tengas builds compatibles.
+
+Para más detalles, consulta `GUIA_INSTALACION_DESARROLLO.md`.
 
 To learn more about developing your project with Expo, look at the following resources:
 

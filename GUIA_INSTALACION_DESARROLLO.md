@@ -356,7 +356,7 @@ react-devtools
 
 ## 🚀 Build y Distribución
 
-### Desarrollo (EAS Updates)
+### Desarrollo (EAS Updates - Para cambios de código)
 ```bash
 # Instalar EAS CLI
 npm install -g eas-cli
@@ -364,11 +364,31 @@ npm install -g eas-cli
 # Login en Expo
 eas login
 
-# Crear update de desarrollo
-eas update --branch development
+# Para cambios de código SIN paquetes nuevos o configuración nativa
+# Actualizar rama por defecto
+eas update --auto --message "Fix: corregido cálculo de horas"
+
+# O especificar rama manualmente
+eas update --branch main --message "Update: mejorada UI de ubicación"
+eas update --branch production --message "Fix: problema de ubicación resuelto"
 ```
 
-### Producción
+### Cuándo usar EAS Updates vs Build completa
+
+#### ✅ **EAS Updates (rápido, ~30 segundos)**:
+- Cambios en componentes React/TypeScript
+- Corrección de bugs de lógica
+- Mejoras de UI y estilos
+- Actualización de URLs o configuración de código
+- Modificaciones en hooks o funciones
+
+#### ❌ **Build completa (lento, ~10-15 minutos)**:
+- Instalación de nuevos paquetes npm
+- Cambios en app.json (permisos, plugins)
+- Nuevas dependencias nativas
+- Cambios en configuración de build
+
+### Producción (Builds completas)
 ```bash
 # Build para Android
 eas build --platform android

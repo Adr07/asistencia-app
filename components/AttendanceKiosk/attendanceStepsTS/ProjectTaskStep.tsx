@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, ScrollView, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
-import ProyectList from "../otros/ProyectList";
+import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
 
 declare global {
@@ -101,15 +101,15 @@ export function ProjectTaskStep(props: ProjectTaskStepProps) {
       <Text style={styles.welcome}>
         {mode === "welcome" ? "¡Bienvenido!" : "Selecciona nueva tarea"}
       </Text>
-      <ProyectList
+      <ProjectTaskDropdowns
         uid={uid}
         pass={pass}
         selectedProject={projectListSelectedProject}
         selectedTask={projectListSelectedTask}
-        onSelectProject={(project) => {
+        onSelectProject={(project: any) => {
           handleSelectProject(project);
         }}
-        onSelectTask={(task) => {
+        onSelectTask={(task: any) => {
           handleSelectTask(task);
         }}
         hideTitle={mode === "changing_task"}

@@ -79,10 +79,16 @@ export async function handleCheck({
     
     if (action === "sign_in") {
       // ENTRADA (CHECK-IN): Crear nuevo registro de asistencia
-      const vals: any = { employee_id: empId, check_in: nowUTC };
+      const vals: any = { 
+        employee_id: empId, 
+        check_in: nowUTC,
+        in_mode: 'systray' // Modo de entrada desde app móvil
+      };
       if (geo) {
         vals.in_latitude = Number(geo.latitude);
         vals.in_longitude = Number(geo.longitude);
+        // Agregar enlace de Google Maps para ubicación de entrada
+        vals.x_in_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
       }
       
       await odooCreate({
@@ -128,10 +134,15 @@ export async function handleCheck({
       
       // Si no hay proyecto o tarea seleccionados, solo cerrar el registro
       if (!selectedProject || !selectedTask) {
-        const checkoutVals: any = { check_out: nowUTC };
+        const checkoutVals: any = { 
+          check_out: nowUTC,
+          out_mode: 'systray' // Modo de salida desde app móvil
+        };
         if (geo) {
           checkoutVals.out_latitude = Number(geo.latitude);
           checkoutVals.out_longitude = Number(geo.longitude);
+          // Agregar enlace de Google Maps para ubicación de salida
+          checkoutVals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
         }
         
         await odooWrite({
@@ -158,10 +169,17 @@ export async function handleCheck({
       }
       
       // Cerrar el registro de asistencia con check-out
-      const vals: any = { check_out: nowUTC };
+      const vals: any = { 
+        check_out: nowUTC,
+        out_mode: 'systray' // Modo de salida desde app móvil
+      };
       if (geo) {
         vals.out_latitude = Number(geo.latitude);
         vals.out_longitude = Number(geo.longitude);
+        // Agregar enlace de Google Maps para ubicación de salida
+        vals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
+        // Agregar iframe embed HTML para mostrar mapa directamente
+        vals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
       }
       
       await odooWrite({
