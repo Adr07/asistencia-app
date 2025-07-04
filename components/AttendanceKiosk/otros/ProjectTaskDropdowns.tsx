@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { DB, RPC_URL } from './config';
 import { rpcCall } from './rpc';
 import { showMessage } from './util';
@@ -30,11 +30,18 @@ interface DropdownProps {
 // Componente Dropdown personalizado
 function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.name, keyExtractor = (item) => item.id.toString() }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   const handleSelect = (item: any) => {
     onSelect(item);
     setIsOpen(false);
+    setSearch('');
   };
+
+  // Filtrar data por búsqueda
+  const filteredData = search.trim().length > 0
+    ? data.filter(item => renderItem(item).toLowerCase().includes(search.trim().toLowerCase()))
+    : data;
 
   return (
     <View style={styles.dropdownWrapper}>
@@ -75,8 +82,23 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
           onPress={() => setIsOpen(false)}
         >
           <View style={styles.modalContent}>
+            {/* Cuadro de búsqueda */}
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 6,
+                padding: 8,
+                marginBottom: 10,
+                backgroundColor: '#fff',
+              }}
+              placeholder="Buscar..."
+              value={search}
+              onChangeText={setSearch}
+              autoFocus
+            />
             <FlatList
-              data={data}
+              data={filteredData}
               keyExtractor={keyExtractor}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -91,6 +113,7 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
               )}
               style={styles.dropdownList}
               showsVerticalScrollIndicator={true}
+              ListEmptyComponent={<Text style={{ padding: 10, color: '#888' }}>No hay resultados</Text>}
             />
           </View>
         </TouchableOpacity>

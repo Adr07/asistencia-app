@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { OdooAutocompleteInput } from '../../OdooAutocompleteInput';
 import { DB, RPC_URL } from './config';
 import { ProyectListStyles } from './PoryectListSytyle';
 import { rpcCall } from './rpc';
@@ -25,11 +26,8 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   const [loadingTasks, setLoadingTasks] = useState<number | null>(null);
   const [expandedProjects, setExpandedProjects] = useState<{ [key: number]: boolean }>({});
   
-  // Estados para paginación y búsqueda
+  // Estados para paginación (solo fallback)
   const [currentPage, setCurrentPage] = useState(0);
-  const [searchText, setSearchText] = useState('');
-  const [searchResults, setSearchResults] = useState<{projects: any[], tasks: any[]}>({ projects: [], tasks: [] });
-  const [isSearching, setIsSearching] = useState(false);
   const PROJECTS_PER_PAGE = 5;
 
   useEffect(() => {
@@ -63,73 +61,7 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
     fetchProjects();
   }, [uid, pass]);
 
-  // Función para realizar búsqueda
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults({ projects: [], tasks: [] });
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      // Buscar proyectos
-      const projectsRes = await rpcCall<any[]>(
-        'object', 'execute_kw',
-        [
-          DB,
-          uid,
-          pass,
-          'project.project',
-          'search_read',
-          [ [['name', 'ilike', query]] ],
-          { fields: ['id', 'name'], limit: 20 }
-        ],
-        RPC_URL
-      );
-
-      // Buscar tareas
-      const tasksRes = await rpcCall<any[]>(
-        'object', 'execute_kw',
-        [
-          DB,
-          uid,
-          pass,
-          'project.task',
-          'search_read',
-          [ [['name', 'ilike', query]] ],
-          { fields: ['id', 'name', 'project_id', 'stage_id', 'progress'], limit: 20 }
-        ],
-        RPC_URL
-      );
-
-      // Filtrar proyectos internos
-      const filteredProjects = projectsRes.filter(
-        (proyecto) => proyecto.id !== 1 && !(proyecto.name?.toLowerCase().includes("interno"))
-      );
-
-      setSearchResults({ projects: filteredProjects, tasks: tasksRes });
-    } catch {
-      showMessage('Error', 'Error al realizar la búsqueda');
-      setSearchResults({ projects: [], tasks: [] });
-    } finally {
-      setIsSearching(false);
-    }
-  }, [uid, pass]);
-
-  // useEffect para búsqueda con debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchText.trim().length >= 2) {
-        performSearch(searchText);
-      } else if (searchText.trim().length === 0) {
-        setSearchResults({ projects: [], tasks: [] });
-        setIsSearching(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchText, performSearch]);
+  // El autocompletado reemplaza la búsqueda manual
 
   // Mover fetchTasks fuera del useEffect para que esté disponible globalmente
   const fetchTasks = useCallback(async (projectId: number) => {
@@ -219,218 +151,107 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
     });
   };
 
+  // --- Render principal ---
   return (
     <View style={ProyectListStyles.container}>
       {!hideTitle && (
         <Text style={ProyectListStyles.title}>Selecciona un proyecto y una tarea</Text>
       )}
-      
-      {/* Cuadro de búsqueda */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar proyecto o tarea..."
-          value={searchText}
-          onChangeText={setSearchText}
+      {/* Autocompletado de proyecto */}
+      <View style={{ zIndex: 20 }}>
+        <OdooAutocompleteInput
+          model="project.project"
+          searchField="name"
+          placeholder="Buscar proyecto..."
+          onSelect={onSelectProject}
+          value={selectedProject}
+          uid={uid}
+          pass={pass}
+          extraDomain={[["id", "!=", 1], ["name", "not ilike", "interno"]]}
+          labelField="name"
         />
-        {isSearching && <ActivityIndicator size="small" color="#007bff" style={styles.searchLoader} />}
       </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#007bff" />
-      ) : (
+      {/* Autocompletado de tarea, solo si hay proyecto seleccionado */}
+      {selectedProject && (
+        <View style={{ zIndex: 10 }}>
+          <OdooAutocompleteInput
+            model="project.task"
+            searchField="name"
+            placeholder="Buscar tarea..."
+            onSelect={onSelectTask}
+            value={selectedTask}
+            uid={uid}
+            pass={pass}
+            extraDomain={[["project_id", "=", selectedProject.id]]}
+            labelField="name"
+          />
+        </View>
+      )}
+
+      {/* Fallback: lista expandible solo si no hay búsqueda activa y no hay selección */}
+      {!selectedProject && proyectosFiltrados.length > 0 && (
         <ScrollView style={styles.scrollContainer}>
-          {/* Resultados de búsqueda */}
-          {searchText.trim().length >= 2 && (
-            <View style={styles.searchResultsContainer}>
-              <Text style={styles.searchResultsTitle}>Resultados de búsqueda:</Text>
-              
-              {/* Proyectos encontrados */}
-              {searchResults.projects.length > 0 && (
-                <View style={styles.searchSection}>
-                  <Text style={styles.searchSectionTitle}>Proyectos:</Text>
-                  {searchResults.projects.map((proyecto) => (
-                    <TouchableOpacity
-                      key={`search-project-${proyecto.id}`}
-                      style={[
-                        ProyectListStyles.projectItem,
-                        styles.searchResultItem,
-                        selectedProject && selectedProject.id === proyecto.id && ProyectListStyles.selectedItem
-                      ]}
-                      onPress={() => {
-                        handleSelectProject(proyecto);
-                        setSearchText(''); // Limpiar búsqueda al seleccionar
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={ProyectListStyles.projectName}>🔍 {proyecto.name}</Text>
-                    </TouchableOpacity>
-                  ))}
+          {proyectosPaginados.map((proyecto) => (
+            <View key={proyecto.id}>
+              <TouchableOpacity
+                style={[
+                  ProyectListStyles.projectItem,
+                  selectedProject && selectedProject.id === proyecto.id && ProyectListStyles.selectedItem
+                ]}
+                onPress={() => {
+                  handleSelectProject(proyecto);
+                  toggleProject(proyecto.id);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={ProyectListStyles.projectName}>{proyecto.name} {expandedProjects[proyecto.id] ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+              {/* Mostrar tareas solo si este proyecto está expandido */}
+              {expandedProjects[proyecto.id] && (
+                <View style={ProyectListStyles.taskList}>
+                  {loadingTasks === proyecto.id ? (
+                    <ActivityIndicator size="small" color="#007bff" />
+                  ) : (
+                    (tareas[proyecto.id]?.length > 0 ? (
+                      tareas[proyecto.id].map((tarea) => {
+                        const isDone = tarea.stage_id && tarea.stage_id[1] &&
+                          (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
+                        const isCurrentTask = currentTask && currentTask.id === tarea.id && 
+                                             currentProject && currentProject.id === proyecto.id;
+                        return (
+                          <TouchableOpacity
+                            key={tarea.id}
+                            style={[
+                              ProyectListStyles.taskItem,
+                              selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
+                              isDone && styles.completedTaskGreen,
+                              isCurrentTask && styles.currentTaskDisabled
+                            ]}
+                            onPress={() => !isDone && !isCurrentTask && handleSelectTask(tarea)}
+                            activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
+                            disabled={isDone || isCurrentTask}
+                          >
+                            <Text style={[
+                              ProyectListStyles.taskName,
+                              isDone && styles.completedTaskTextGreen,
+                              isCurrentTask && styles.currentTaskTextDisabled
+                            ]}>
+                              {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''} 
+                              {isDone ? ' ✔️' : ''} 
+                              {isCurrentTask ? ' (Tarea Actual)' : ''}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })
+                    ) : (
+                      <Text style={ProyectListStyles.emptyTaskText}>No hay tareas para este proyecto.</Text>
+                    ))
+                  )}
                 </View>
-              )}
-
-              {/* Tareas encontradas */}
-              {searchResults.tasks.length > 0 && (
-                <View style={styles.searchSection}>
-                  <Text style={styles.searchSectionTitle}>Tareas:</Text>
-                  {searchResults.tasks.map((tarea) => {
-                    const isDone = tarea.stage_id && tarea.stage_id[1] &&
-                      (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
-                    const isCurrentTask = currentTask && currentTask.id === tarea.id;
-                    
-                    return (
-                      <TouchableOpacity
-                        key={`search-task-${tarea.id}`}
-                        style={[
-                          ProyectListStyles.taskItem,
-                          styles.searchResultItem,
-                          selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
-                          isDone && styles.completedTaskGreen,
-                          isCurrentTask && styles.currentTaskDisabled
-                        ]}
-                        onPress={() => {
-                          if (!isDone && !isCurrentTask) {
-                            handleSelectTaskFromSearch(tarea);
-                            setSearchText(''); // Limpiar búsqueda al seleccionar
-                          }
-                        }}
-                        activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
-                        disabled={isDone || isCurrentTask}
-                      >
-                        <Text style={[
-                          ProyectListStyles.taskName,
-                          isDone && styles.completedTaskTextGreen,
-                          isCurrentTask && styles.currentTaskTextDisabled
-                        ]}>
-                          🔍 {tarea.name} 
-                          {tarea.project_id && tarea.project_id[1] ? ` (${tarea.project_id[1]})` : ''}
-                          {tarea.stage_id && tarea.stage_id[1] ? ` - ${tarea.stage_id[1]}` : ''}
-                          {isDone ? ' ✔️' : ''}
-                          {isCurrentTask ? ' (Tarea Actual)' : ''}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-
-              {searchResults.projects.length === 0 && searchResults.tasks.length === 0 && !isSearching && (
-                <Text style={styles.noResultsText}>No se encontraron resultados</Text>
               )}
             </View>
-          )}
-
-          {/* Lista normal de proyectos (solo si no hay búsqueda activa) */}
-          {searchText.trim().length < 2 && (
-            <>
-              {proyectosFiltrados.length === 0 ? (
-                <Text style={ProyectListStyles.emptyText}>No hay proyectos disponibles.</Text>
-              ) : (
-                <>
-                  {/* Información de paginación */}
-                  {proyectosFiltrados.length > PROJECTS_PER_PAGE && (
-                    <View style={styles.paginationInfo}>
-                      <Text style={styles.paginationText}>
-                        Mostrando {startIndex + 1}-{Math.min(endIndex, proyectosFiltrados.length)} de {proyectosFiltrados.length} proyectos
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Proyectos paginados */}
-                  {proyectosPaginados.map((proyecto) => (
-                    <View key={proyecto.id}>
-                      <TouchableOpacity
-                        style={[
-                          ProyectListStyles.projectItem,
-                          selectedProject && selectedProject.id === proyecto.id && ProyectListStyles.selectedItem
-                        ]}
-                        onPress={() => {
-                          handleSelectProject(proyecto);
-                          toggleProject(proyecto.id);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={ProyectListStyles.projectName}>{proyecto.name} {expandedProjects[proyecto.id] ? '▲' : '▼'}</Text>
-                      </TouchableOpacity>
-                      {/* Mostrar tareas solo si este proyecto está expandido */}
-                      {expandedProjects[proyecto.id] && (
-                        <View style={ProyectListStyles.taskList}>
-                          {loadingTasks === proyecto.id ? (
-                            <ActivityIndicator size="small" color="#007bff" />
-                          ) : (
-                            (tareas[proyecto.id]?.length > 0 ? (
-                              tareas[proyecto.id].map((tarea) => {
-                                const isDone = tarea.stage_id && tarea.stage_id[1] &&
-                                  (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
-                                const isCurrentTask = currentTask && currentTask.id === tarea.id && 
-                                                     currentProject && currentProject.id === proyecto.id;
-                                
-                                return (
-                                  <TouchableOpacity
-                                    key={tarea.id}
-                                    style={[
-                                      ProyectListStyles.taskItem,
-                                      selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
-                                      isDone && styles.completedTaskGreen,
-                                      isCurrentTask && styles.currentTaskDisabled
-                                    ]}
-                                    onPress={() => !isDone && !isCurrentTask && handleSelectTask(tarea)}
-                                    activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
-                                    disabled={isDone || isCurrentTask}
-                                  >
-                                    <Text style={[
-                                      ProyectListStyles.taskName,
-                                      isDone && styles.completedTaskTextGreen,
-                                      isCurrentTask && styles.currentTaskTextDisabled
-                                    ]}>
-                                      {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''} 
-                                      {isDone ? ' ✔️' : ''} 
-                                      {isCurrentTask ? ' (Tarea Actual)' : ''}
-                                    </Text>
-                                  </TouchableOpacity>
-                                );
-                              })
-                            ) : (
-                              <Text style={ProyectListStyles.emptyTaskText}>No hay tareas para este proyecto.</Text>
-                            ))
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  ))}
-
-                  {/* Controles de paginación */}
-                  {proyectosFiltrados.length > PROJECTS_PER_PAGE && (
-                    <View style={styles.paginationControls}>
-                      <TouchableOpacity
-                        style={[styles.paginationButton, currentPage === 0 && styles.paginationButtonDisabled]}
-                        onPress={goToPrevPage}
-                        disabled={currentPage === 0}
-                      >
-                        <Text style={[styles.paginationButtonText, currentPage === 0 && styles.paginationButtonTextDisabled]}>
-                          ← Anterior
-                        </Text>
-                      </TouchableOpacity>
-                      
-                      <Text style={styles.paginationInfo}>
-                        Página {currentPage + 1} de {totalPages}
-                      </Text>
-                      
-                      <TouchableOpacity
-                        style={[styles.paginationButton, currentPage >= totalPages - 1 && styles.paginationButtonDisabled]}
-                        onPress={goToNextPage}
-                        disabled={currentPage >= totalPages - 1}
-                      >
-                        <Text style={[styles.paginationButtonText, currentPage >= totalPages - 1 && styles.paginationButtonTextDisabled]}>
-                          Siguiente →
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </>
-              )}
-            </>
-          )}
+          ))}
         </ScrollView>
       )}
     </View>
