@@ -6,14 +6,8 @@
  */
 
 import React from 'react';
-import {
-    Alert,
-    Linking,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
+import LocationAlertStyles from './LocationAlertStyles';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
 
@@ -39,54 +33,54 @@ export function LocationAlert({ visible, message, onRetry, onCancel }: LocationA
   };
 
   return (
-    <ThemedView style={styles.overlay}>
-      <View style={styles.container}>
-        <View style={styles.content}>
+    <ThemedView style={LocationAlertStyles.overlay}>
+      <View style={LocationAlertStyles.container}>
+        <View style={LocationAlertStyles.content}>
           {/* Icono de alerta */}
-          <View style={styles.iconContainer}>
-            <Text style={styles.alertIcon}>⚠️</Text>
+          <View style={LocationAlertStyles.iconContainer}>
+            <Text style={LocationAlertStyles.alertIcon}>⚠️</Text>
           </View>
 
           {/* Título */}
-          <ThemedText style={styles.title}>
+          <ThemedText style={LocationAlertStyles.title}>
             Ubicación requerida
           </ThemedText>
 
           {/* Mensaje específico */}
-          <ThemedText style={styles.message}>
+          <ThemedText style={LocationAlertStyles.message}>
             {message}
           </ThemedText>
 
-          <ThemedText style={styles.subMessage}>
+          <ThemedText style={LocationAlertStyles.subMessage}>
             La ubicación es obligatoria para registrar la asistencia y verificar que estés en el lugar de trabajo.
           </ThemedText>
 
           {/* Botones de acción */}
-          <View style={styles.buttonContainer}>
+          <View style={LocationAlertStyles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={[LocationAlertStyles.button, LocationAlertStyles.primaryButton]}
               onPress={onRetry}
             >
-              <Text style={styles.primaryButtonText}>
+              <Text style={LocationAlertStyles.primaryButtonText}>
                 Intentar nuevamente
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
+              style={[LocationAlertStyles.button, LocationAlertStyles.secondaryButton]}
               onPress={handleOpenSettings}
             >
-              <Text style={styles.secondaryButtonText}>
+              <Text style={LocationAlertStyles.secondaryButtonText}>
                 Abrir configuración
               </Text>
             </TouchableOpacity>
 
             {onCancel && (
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[LocationAlertStyles.button, LocationAlertStyles.cancelButton]}
                 onPress={onCancel}
               >
-                <Text style={styles.cancelButtonText}>
+                <Text style={LocationAlertStyles.cancelButtonText}>
                   Cancelar
                 </Text>
               </TouchableOpacity>
@@ -94,8 +88,8 @@ export function LocationAlert({ visible, message, onRetry, onCancel }: LocationA
           </View>
 
           {/* Información adicional */}
-          <View style={styles.infoContainer}>
-            <ThemedText style={styles.infoText}>
+          <View style={LocationAlertStyles.infoContainer}>
+            <ThemedText style={LocationAlertStyles.infoText}>
               💡 Asegúrate de que el GPS esté activado y que tengas buena señal
             </ThemedText>
           </View>
@@ -105,106 +99,3 @@ export function LocationAlert({ visible, message, onRetry, onCancel }: LocationA
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  container: {
-    backgroundColor: 'white',
-    margin: 20,
-    borderRadius: 16,
-    padding: 20,
-    maxWidth: 350,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  content: {
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginBottom: 16,
-  },
-  alertIcon: {
-    fontSize: 48,
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 12,
-    color: '#d32f2f',
-  },
-  message: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 22,
-  },
-  subMessage: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-    opacity: 0.8,
-    lineHeight: 20,
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  primaryButton: {
-    backgroundColor: '#1976d2',
-  },
-  primaryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#1976d2',
-  },
-  secondaryButtonText: {
-    color: '#1976d2',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    backgroundColor: 'transparent',
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  infoContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#fff3e0',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ffcc02',
-  },
-  infoText: {
-    color: '#f57c00',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-});

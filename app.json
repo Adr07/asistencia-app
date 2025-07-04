@@ -29,7 +29,9 @@
       "runtimeVersion": "1.0.0",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -68,6 +70,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/1968fc7e-f27a-439a-b104-402c896b8a1d"
-    }
+    },
+    "owner": "adry01"
   }
 }

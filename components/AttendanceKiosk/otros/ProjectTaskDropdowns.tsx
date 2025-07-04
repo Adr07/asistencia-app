@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { DB, RPC_URL } from './config';
-import { rpcCall } from './rpc';
-import { showMessage } from './util';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useProjectTaskDropdownsLogic } from '../../../ts/useProjectTaskDropdownsLogic';
+import ProjectTaskDropdownsStyles from './ProjectTaskDropdownsStyles';
 
 interface ProjectTaskDropdownsProps {
   uid: number;
@@ -44,30 +43,30 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
     : data;
 
   return (
-    <View style={styles.dropdownWrapper}>
+    <View style={ProjectTaskDropdownsStyles.dropdownWrapper}>
       <TouchableOpacity
         style={[
-          styles.dropdownButton,
-          disabled && styles.dropdownButtonDisabled,
-          isOpen && styles.dropdownButtonOpen
+          ProjectTaskDropdownsStyles.dropdownButton,
+          disabled && ProjectTaskDropdownsStyles.dropdownButtonDisabled,
+          isOpen && ProjectTaskDropdownsStyles.dropdownButtonOpen
         ]}
         onPress={() => !disabled && !loading && setIsOpen(true)}
         disabled={disabled || loading}
       >
         {loading ? (
-          <View style={styles.loadingRow}>
+          <View style={ProjectTaskDropdownsStyles.loadingRow}>
             <ActivityIndicator size="small" color="#666" />
-            <Text style={styles.loadingText}>Cargando...</Text>
+            <Text style={ProjectTaskDropdownsStyles.loadingText}>Cargando...</Text>
           </View>
         ) : (
           <Text style={[
-            styles.dropdownButtonText,
-            !selectedValue && styles.placeholderText
+            ProjectTaskDropdownsStyles.dropdownButtonText,
+            !selectedValue && ProjectTaskDropdownsStyles.placeholderText
           ]}>
             {selectedValue ? renderItem(selectedValue) : placeholder}
           </Text>
         )}
-        <Text style={styles.dropdownArrow}>{isOpen ? '▲' : '▼'}</Text>
+        <Text style={ProjectTaskDropdownsStyles.dropdownArrow}>{isOpen ? '▲' : '▼'}</Text>
       </TouchableOpacity>
 
       <Modal
@@ -77,11 +76,11 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
         onRequestClose={() => setIsOpen(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={ProjectTaskDropdownsStyles.modalOverlay}
           activeOpacity={1}
           onPress={() => setIsOpen(false)}
         >
-          <View style={styles.modalContent}>
+          <View style={ProjectTaskDropdownsStyles.modalContent}>
             {/* Cuadro de búsqueda */}
             <TextInput
               style={{
@@ -103,15 +102,15 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[
-                    styles.dropdownItem,
-                    selectedValue && keyExtractor(selectedValue) === keyExtractor(item) && styles.selectedDropdownItem
+                    ProjectTaskDropdownsStyles.dropdownItem,
+                    selectedValue && keyExtractor(selectedValue) === keyExtractor(item) && ProjectTaskDropdownsStyles.selectedDropdownItem
                   ]}
                   onPress={() => handleSelect(item)}
                 >
-                  <Text style={styles.dropdownItemText}>{renderItem(item)}</Text>
+                  <Text style={ProjectTaskDropdownsStyles.dropdownItemText}>{renderItem(item)}</Text>
                 </TouchableOpacity>
               )}
-              style={styles.dropdownList}
+              style={ProjectTaskDropdownsStyles.dropdownList}
               showsVerticalScrollIndicator={true}
               ListEmptyComponent={<Text style={{ padding: 10, color: '#888' }}>No hay resultados</Text>}
             />
@@ -121,7 +120,6 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
     </View>
   );
 }
-
 export default function ProjectTaskDropdowns({ 
   uid, 
   pass, 
@@ -133,146 +131,50 @@ export default function ProjectTaskDropdowns({
   currentProject, 
   currentTask 
 }: ProjectTaskDropdownsProps) {
-  const [proyectos, setProyectos] = useState<any[]>([]);
-  const [tareas, setTareas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingTasks, setLoadingTasks] = useState(false);
+  const {
+    proyectos,
+    availableTasks,
+    loading,
+    loadingTasks
+  } = useProjectTaskDropdownsLogic(uid, pass, selectedProject, currentTask);
 
-  // Cargar proyectos al montar el componente
-  useEffect(() => {
-    if (uid == null || pass == null || pass === "") {
-      return;
-    }
-    
-    async function fetchProjects() {
-      setLoading(true);
-      try {
-        const res = await rpcCall<any[]>(
-          'object', 'execute_kw',
-          [
-            DB,
-            uid,
-            pass,
-            'project.project',
-            'search_read',
-            [[['active', '=', true]]],
-            { fields: ['id', 'name'] }
-          ],
-          RPC_URL
-        );
-        if (res && Array.isArray(res)) {
-          // Filtro frontend para excluir proyecto interno
-          const filtrados = res.filter(
-            p => p.id !== 1 && !(p.name?.toLowerCase().includes('interno'))
-          );
-          if (res.length !== filtrados.length) {
-            console.log('[ProjectTaskDropdowns] Proyectos excluidos:', res.filter(p => p.id === 1 || (p.name?.toLowerCase().includes('interno'))));
-          }
-          setProyectos(filtrados);
-        }
-      } catch (error) {
-        console.error('Error al cargar proyectos:', error);
-        showMessage('Error al cargar proyectos');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProjects();
-  }, [uid, pass]);
-
-  // Cargar tareas cuando se selecciona un proyecto
-  useEffect(() => {
-    if (!selectedProject?.id || uid == null || pass == null) {
-      setTareas([]);
-      return;
-    }
-
-    async function fetchTasks() {
-      setLoadingTasks(true);
-      try {
-        const res = await rpcCall<any[]>(
-          'object', 'execute_kw',
-          [
-            DB,
-            uid,
-            pass,
-            'project.task',
-            'search_read',
-            [[
-              ['project_id', '=', selectedProject.id],
-              ['active', '=', true]
-            ]],
-            { fields: ['id', 'name', 'stage_id'] }
-          ],
-          RPC_URL
-        );
-        
-        if (res && Array.isArray(res)) {
-          // Filtrar tareas completadas
-          const activeTasks = res.filter(task => {
-            const isDone = task.stage_id && task.stage_id[1] &&
-              (task.stage_id[1].toLowerCase().includes('completado') || 
-               task.stage_id[1].toLowerCase().includes('closed'));
-            return !isDone;
-          });
-          setTareas(activeTasks);
-        }
-      } catch (error) {
-        console.error('Error al cargar tareas:', error);
-        showMessage('Error al cargar tareas');
-      } finally {
-        setLoadingTasks(false);
-      }
-    }
-    
-    fetchTasks();
-  }, [selectedProject?.id, uid, pass]);
-
-  // Handler para selección de proyecto
   const handleProjectChange = useCallback((project: any) => {
     onSelectProject(project);
-    // Limpiar tarea seleccionada cuando cambia el proyecto
     onSelectTask(null);
   }, [onSelectProject, onSelectTask]);
 
-  // Handler para selección de tarea
   const handleTaskChange = useCallback((task: any) => {
-    // Verificar que no sea la tarea actual
     const isCurrentTask = currentTask && currentTask.id === task.id;
     if (!isCurrentTask) {
       onSelectTask(task);
     }
   }, [onSelectTask, currentTask]);
 
-  // Renderizado personalizado para tareas (mostrar si es actual)
   const renderTask = useCallback((task: any) => {
     const isCurrentTask = currentTask && currentTask.id === task.id;
     return isCurrentTask ? `${task.name} (actual)` : task.name;
   }, [currentTask]);
 
-  // Filtrar tareas para no mostrar la actual como opción
-  const availableTasks = tareas.filter(task => !currentTask || currentTask.id !== task.id);
-
   return (
-    <View style={styles.container}>
+    <View style={ProjectTaskDropdownsStyles.container}>
       {!hideTitle && (
-        <Text style={styles.title}>Selecciona Proyecto y Tarea</Text>
+        <Text style={ProjectTaskDropdownsStyles.title}>Selecciona Proyecto y Tarea</Text>
       )}
-      
+
       {/* Información de proyecto/tarea actual si está en modo cambio */}
       {currentProject && currentTask && (
-        <View style={styles.currentInfo}>
-          <Text style={styles.currentLabel}>Proyecto actual:</Text>
-          <Text style={styles.currentText}>{currentProject.name}</Text>
-          <Text style={styles.currentLabel}>Tarea actual:</Text>
-          <Text style={styles.currentText}>{currentTask.name}</Text>
-          <Text style={styles.changeLabel}>Selecciona nueva tarea:</Text>
+        <View style={ProjectTaskDropdownsStyles.currentInfo}>
+          <Text style={ProjectTaskDropdownsStyles.currentLabel}>Proyecto actual:</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentProject.name}</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentLabel}>Tarea actual:</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentTask.name}</Text>
+          <Text style={ProjectTaskDropdownsStyles.changeLabel}>Selecciona nueva tarea:</Text>
         </View>
       )}
 
       {/* Dropdown de Proyectos */}
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Proyecto:</Text>
+      <View style={ProjectTaskDropdownsStyles.fieldContainer}>
+        <Text style={ProjectTaskDropdownsStyles.label}>Proyecto:</Text>
         <CustomDropdown
           data={proyectos}
           selectedValue={selectedProject}
@@ -284,8 +186,8 @@ export default function ProjectTaskDropdowns({
       </View>
 
       {/* Dropdown de Tareas */}
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Tarea:</Text>
+      <View style={ProjectTaskDropdownsStyles.fieldContainer}>
+        <Text style={ProjectTaskDropdownsStyles.label}>Tarea:</Text>
         <CustomDropdown
           data={availableTasks}
           selectedValue={selectedTask}
@@ -298,8 +200,8 @@ export default function ProjectTaskDropdowns({
       </View>
 
       {/* Texto de ayuda */}
-      <View style={styles.helpContainer}>
-        <Text style={styles.helpText}>
+      <View style={ProjectTaskDropdownsStyles.helpContainer}>
+        <Text style={ProjectTaskDropdownsStyles.helpText}>
           {!selectedProject 
             ? "Selecciona un proyecto para ver las tareas disponibles"
             : !selectedTask
@@ -312,134 +214,4 @@ export default function ProjectTaskDropdowns({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    margin: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
-  },
-  currentInfo: {
-    backgroundColor: '#e3f2fd',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196f3',
-  },
-  currentLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 2,
-  },
-  currentText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 8,
-  },
-  changeLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2196f3',
-    marginTop: 8,
-  },
-  fieldContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  dropdownWrapper: {
-    position: 'relative',
-  },
-  dropdownButton: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 50,
-  },
-  dropdownButtonDisabled: {
-    backgroundColor: '#f5f5f5',
-    borderColor: '#ccc',
-  },
-  dropdownButtonOpen: {
-    borderColor: '#2196f3',
-    borderWidth: 2,
-  },
-  dropdownButtonText: {
-    fontSize: 16,
-    color: '#333',
-    flex: 1,
-  },
-  placeholderText: {
-    color: '#999',
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 8,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  loadingText: {
-    marginLeft: 8,
-    color: '#666',
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    maxHeight: '70%',
-    width: '80%',
-    maxWidth: 400,
-  },
-  dropdownList: {
-    maxHeight: 300,
-  },
-  dropdownItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  selectedDropdownItem: {
-    backgroundColor: '#e3f2fd',
-  },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  helpContainer: {
-    marginTop: 8,
-  },
-  helpText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-});
+
