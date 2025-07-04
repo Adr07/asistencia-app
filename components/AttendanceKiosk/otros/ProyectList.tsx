@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { odooRead } from '../../../db/odooApi';
 import { OdooAutocompleteInput } from '../../OdooAutocompleteInput';
 import { DB, RPC_URL } from './config';
 import { ProyectListStyles } from './PoryectListSytyle';
@@ -19,7 +20,10 @@ interface ProyectListProps {
   currentTask?: any;
 }
 
-export default function ProyectList({ uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle, currentProject, currentTask }: ProyectListProps) {
+export default function ProyectList(props: ProyectListProps) {
+  console.log('ProyectList montado con props:', props);
+  const { uid, pass, onSelectProject, selectedProject, onSelectTask, selectedTask, hideTitle, currentProject, currentTask } = props;
+
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [tareas, setTareas] = useState<{ [key: number]: any[] }>({});
   const [loading, setLoading] = useState(false);
@@ -31,27 +35,41 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   const PROJECTS_PER_PAGE = 5;
 
   useEffect(() => {
+    console.log('useEffect de proyectos ejecutado', { uid, pass });
     // Validación: uid y pass deben estar definidos y válidos
     if (uid == null || pass == null || pass === "") {
       return;
     }
     async function fetchProjects() {
+      console.log('fetchProjects ejecutándose');
       setLoading(true);
       try {
-        const res = await rpcCall<any[]>(
-          'object', 'execute_kw',
-          [
-            DB,
-            uid,
-            pass,
-            'project.project',
-            'search_read',
-            [ [] ],
-            { fields: ['id', 'name'], limit: 100 }
+        const res = await odooRead({
+          model: 'project.project',
+          fields: ['id', 'name'],
+          domain: [
+            '&',
+              '!',
+                '|',
+                  ['id', '=', 1],
+                  ['name', 'ilike', 'interno'],
+              ['active', '=', true]
           ],
-          RPC_URL
-        );
-        setProyectos(res);
+          uid,
+          pass,
+          limit: 100
+        }) as { id: number; name: string }[];
+        console.log('Proyectos recibidos del backend:', res);
+        // Filtro extra en frontend por si acaso
+        const filtrados = res.filter(p => {
+          const excluido = p.id === 1 || (p.name?.toLowerCase().includes('interno'));
+          if (excluido) {
+            console.log('ProyectList: proyecto excluido en filtro frontend:', p);
+          }
+          return !excluido;
+        });
+        console.log('Proyectos después del filtro frontend:', filtrados);
+        setProyectos(filtrados);
       } catch (error: any) {
         showMessage('Error', error.message);
       } finally {
@@ -95,39 +113,44 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
     }
   }, [selectedProject, uid, pass, tareas, fetchTasks]);
 
-  // Filtrar proyectos para excluir el proyecto interno (id 1 o nombre que contenga "interno")
-  const proyectosFiltrados = proyectos.filter(
-    (proyecto) => proyecto.id !== 1 && !(proyecto.name?.toLowerCase().includes("interno"))
-  );
+  // Filtrado extra en frontend para asegurar que nunca se muestre el proyecto interno
+  const proyectosFiltrados = proyectos.filter((p) => {
+    const excluido = p.id === 1 || (p.name?.toLowerCase().includes('interno'));
+    if (excluido) {
+      console.log('ProyectList: proyecto excluido en proyectosFiltrados:', p);
+    }
+    return !excluido;
+  });
+  console.log('ProyectList: proyectosFiltrados para fallback:', proyectosFiltrados);
 
   // Calcular proyectos para la página actual
   const startIndex = currentPage * PROJECTS_PER_PAGE;
   const endIndex = startIndex + PROJECTS_PER_PAGE;
   const proyectosPaginados = proyectosFiltrados.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(proyectosFiltrados.length / PROJECTS_PER_PAGE);
+  // const totalPages = Math.ceil(proyectosFiltrados.length / PROJECTS_PER_PAGE);
 
-  // Función para cambiar de página
-  const goToNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  // // Función para cambiar de página
+  // const goToNextPage = () => {
+  //   if (currentPage < totalPages - 1) {
+  //     setCurrentPage(currentPage + 1);
+  //   }
+  // };
 
-  const goToPrevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  // const goToPrevPage = () => {
+  //   if (currentPage > 0) {
+  //     setCurrentPage(currentPage - 1);
+  //   }
+  // };
 
-  // Función para manejar selección de tarea desde búsqueda
-  const handleSelectTaskFromSearch = (tarea: any) => {
-    // Primero buscar el proyecto de la tarea y seleccionarlo
-    const proyecto = proyectos.find(p => p.id === tarea.project_id[0]);
-    if (proyecto) {
-      handleSelectProject(proyecto);
-    }
-    handleSelectTask(tarea);
-  };
+  // // Función para manejar selección de tarea desde búsqueda
+  // const handleSelectTaskFromSearch = (tarea: any) => {
+  //   // Primero buscar el proyecto de la tarea y seleccionarlo
+  //   const proyecto = proyectos.find(p => p.id === tarea.project_id[0]);
+  //   if (proyecto) {
+  //     handleSelectProject(proyecto);
+  //   }
+  //   handleSelectTask(tarea);
+  // };
 
   // Handler para selección de proyecto
   const handleSelectProject = (proyecto: any) => {
@@ -152,6 +175,7 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
   };
 
   // --- Render principal ---
+  console.log('ProyectList renderizando');
   return (
     <View style={ProyectListStyles.container}>
       {!hideTitle && (
@@ -167,7 +191,7 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
           value={selectedProject}
           uid={uid}
           pass={pass}
-          extraDomain={[["id", "!=", 1], ["name", "not ilike", "interno"]]}
+          extraDomain={[]}
           labelField="name"
         />
       </View>
@@ -192,66 +216,74 @@ export default function ProyectList({ uid, pass, onSelectProject, selectedProjec
       {/* Fallback: lista expandible solo si no hay búsqueda activa y no hay selección */}
       {!selectedProject && proyectosFiltrados.length > 0 && (
         <ScrollView style={styles.scrollContainer}>
-          {proyectosPaginados.map((proyecto) => (
-            <View key={proyecto.id}>
-              <TouchableOpacity
-                style={[
-                  ProyectListStyles.projectItem,
-                  selectedProject && selectedProject.id === proyecto.id && ProyectListStyles.selectedItem
-                ]}
-                onPress={() => {
-                  handleSelectProject(proyecto);
-                  toggleProject(proyecto.id);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={ProyectListStyles.projectName}>{proyecto.name} {expandedProjects[proyecto.id] ? '▲' : '▼'}</Text>
-              </TouchableOpacity>
-              {/* Mostrar tareas solo si este proyecto está expandido */}
-              {expandedProjects[proyecto.id] && (
-                <View style={ProyectListStyles.taskList}>
-                  {loadingTasks === proyecto.id ? (
-                    <ActivityIndicator size="small" color="#007bff" />
-                  ) : (
-                    (tareas[proyecto.id]?.length > 0 ? (
-                      tareas[proyecto.id].map((tarea) => {
-                        const isDone = tarea.stage_id && tarea.stage_id[1] &&
-                          (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
-                        const isCurrentTask = currentTask && currentTask.id === tarea.id && 
-                                             currentProject && currentProject.id === proyecto.id;
-                        return (
-                          <TouchableOpacity
-                            key={tarea.id}
-                            style={[
-                              ProyectListStyles.taskItem,
-                              selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
-                              isDone && styles.completedTaskGreen,
-                              isCurrentTask && styles.currentTaskDisabled
-                            ]}
-                            onPress={() => !isDone && !isCurrentTask && handleSelectTask(tarea)}
-                            activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
-                            disabled={isDone || isCurrentTask}
-                          >
-                            <Text style={[
-                              ProyectListStyles.taskName,
-                              isDone && styles.completedTaskTextGreen,
-                              isCurrentTask && styles.currentTaskTextDisabled
-                            ]}>
-                              {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''} 
-                              {isDone ? ' ✔️' : ''} 
-                              {isCurrentTask ? ' (Tarea Actual)' : ''}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })
+          {proyectosPaginados
+            .filter((proyecto) => {
+              const excluido = proyecto.id === 1 || (proyecto.name?.toLowerCase().includes('interno'));
+              if (excluido) {
+                console.log('ProyectList: proyecto excluido en render:', proyecto);
+              }
+              return !excluido;
+            })
+            .map((proyecto) => (
+              <View key={proyecto.id}>
+                <TouchableOpacity
+                  style={[
+                    ProyectListStyles.projectItem,
+                    selectedProject && selectedProject.id === proyecto.id && ProyectListStyles.selectedItem
+                  ]}
+                  onPress={() => {
+                    handleSelectProject(proyecto);
+                    toggleProject(proyecto.id);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={ProyectListStyles.projectName}>{proyecto.name} {expandedProjects[proyecto.id] ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+                {/* Mostrar tareas solo si este proyecto está expandido */}
+                {expandedProjects[proyecto.id] && (
+                  <View style={ProyectListStyles.taskList}>
+                    {loadingTasks === proyecto.id ? (
+                      <ActivityIndicator size="small" color="#007bff" />
                     ) : (
-                      <Text style={ProyectListStyles.emptyTaskText}>No hay tareas para este proyecto.</Text>
-                    ))
-                  )}
-                </View>
-              )}
-            </View>
-          ))}
+                      (tareas[proyecto.id]?.length > 0 ? (
+                        tareas[proyecto.id].map((tarea) => {
+                          const isDone = tarea.stage_id && tarea.stage_id[1] &&
+                            (tarea.stage_id[1].toLowerCase().includes('completado') || tarea.stage_id[1].toLowerCase().includes('closed'));
+                          const isCurrentTask = currentTask && currentTask.id === tarea.id &&
+                                               currentProject && currentProject.id === proyecto.id;
+                          return (
+                            <TouchableOpacity
+                              key={tarea.id}
+                              style={[
+                                ProyectListStyles.taskItem,
+                                selectedTask && selectedTask.id === tarea.id && ProyectListStyles.selectedTask,
+                                isDone && styles.completedTaskGreen,
+                                isCurrentTask && styles.currentTaskDisabled
+                              ]}
+                              onPress={() => !isDone && !isCurrentTask && handleSelectTask(tarea)}
+                              activeOpacity={isDone || isCurrentTask ? 1 : 0.7}
+                              disabled={isDone || isCurrentTask}
+                            >
+                              <Text style={[
+                                ProyectListStyles.taskName,
+                                isDone && styles.completedTaskTextGreen,
+                                isCurrentTask && styles.currentTaskTextDisabled
+                              ]}>
+                                {tarea.name} {tarea.stage_id && tarea.stage_id[1] ? `(${tarea.stage_id[1]})` : ''}
+                                {isDone ? ' ✔️' : ''}
+                                {isCurrentTask ? ' (Tarea Actual)' : ''}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })
+                      ) : (
+                        <Text style={ProyectListStyles.emptyTaskText}>No hay tareas para este proyecto.</Text>
+                      ))
+                    )}
+                  </View>
+                )}
+              </View>
+            ))}
         </ScrollView>
       )}
     </View>

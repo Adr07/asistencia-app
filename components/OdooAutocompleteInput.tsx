@@ -25,31 +25,50 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
   extraDomain = [],
   labelField = 'name',
 }) => {
+  // Excluir proyecto interno si es project.project
+  let domain = [...extraDomain];
+  if (model === 'project.project') {
+    console.log('[OdooAutocompleteInput] Dominio inicial:', JSON.stringify(domain));
+    // Filtrar proyecto interno usando OR condition
+    domain.unshift(
+      '|',
+      ['id', '!=', 1],
+      ['name', 'not ilike', 'interno']
+    );
+    // Asegurar que solo proyectos activos
+    domain.unshift('&');
+    domain.push(['active', '=', true]);
+    console.log('[OdooAutocompleteInput] Dominio final:', JSON.stringify(domain));
+  }
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
+    console.log('[OdooAutocompleteInput] useEffect ejecutado. Query:', query, 'Model:', model);
     if (query.length < 2) {
       setResults([]);
       setShowDropdown(false);
+      console.log('[OdooAutocompleteInput] Query muy corto, no busca.');
       return;
     }
     let active = true;
     setLoading(true);
     const fetchResults = async () => {
       try {
-        const domain = [[searchField, 'ilike', query], ...extraDomain];
+        const searchDomain = [[searchField, 'ilike', query], ...domain];
+        console.log('[OdooAutocompleteInput] searchDomain:', JSON.stringify(searchDomain));
         const idsResult = await odooSearch({
           model,
-          domain,
+          domain: searchDomain,
           uid,
           pass,
           limit: 10,
         });
         let items: any[] = [];
         const idsArr = Array.isArray(idsResult) ? idsResult : [];
+        console.log('[OdooAutocompleteInput] idsResult:', idsResult);
         if (idsArr.length > 0) {
           const readRes = await (await import('../db/odooApi')).odooRead({
             model,
@@ -59,12 +78,20 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
             pass,
           });
           items = Array.isArray(readRes) ? readRes : [];
+          console.log('[OdooAutocompleteInput] readRes:', readRes);
+        }
+        // Filtro extra frontend para nunca mostrar el proyecto interno
+        if (model === 'project.project') {
+          const antes = items.length;
+          items = items.filter(p => p.id !== 1 && !(p[labelField]?.toLowerCase().includes('interno')));
+          console.log('[OdooAutocompleteInput] Filtro frontend aplicado. Antes:', antes, 'Después:', items.length, 'Items:', items);
         }
         if (active) {
           setResults(items);
           setShowDropdown(true);
         }
-      } catch {
+      } catch (e) {
+        console.log('[OdooAutocompleteInput] ERROR:', e);
         setResults([]);
         setShowDropdown(false);
       } finally {
@@ -76,7 +103,7 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
       active = false;
       clearTimeout(timeout);
     };
-  }, [query, model, searchField, uid, pass, extraDomain, labelField]);
+  }, [query, model, searchField, uid, pass, domain, labelField]);
 
   // Sincronizar el valor externo (value) con el input, pero solo si el usuario no está escribiendo
   useEffect(() => {
@@ -115,7 +142,7 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
       />
       {loading && <ActivityIndicator size="small" style={styles.loading} />}
       {showDropdown && (
-        <View style={styles.dropdown}>
+        <View style={[styles.dropdown, { padding: 16 }]}> {/* 1rem = 16px */}
           {/* Cuadro de búsqueda dentro del modal (opcional, aquí es el mismo input) */}
           {/* Lista de resultados filtrados */}
           {results.length > 0 ? (

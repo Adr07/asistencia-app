@@ -160,9 +160,15 @@ export default function ProjectTaskDropdowns({
           ],
           RPC_URL
         );
-        
         if (res && Array.isArray(res)) {
-          setProyectos(res);
+          // Filtro frontend para excluir proyecto interno
+          const filtrados = res.filter(
+            p => p.id !== 1 && !(p.name?.toLowerCase().includes('interno'))
+          );
+          if (res.length !== filtrados.length) {
+            console.log('[ProjectTaskDropdowns] Proyectos excluidos:', res.filter(p => p.id === 1 || (p.name?.toLowerCase().includes('interno'))));
+          }
+          setProyectos(filtrados);
         }
       } catch (error) {
         console.error('Error al cargar proyectos:', error);
@@ -171,7 +177,6 @@ export default function ProjectTaskDropdowns({
         setLoading(false);
       }
     }
-    
     fetchProjects();
   }, [uid, pass]);
 
