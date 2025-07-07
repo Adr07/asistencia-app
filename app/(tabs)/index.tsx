@@ -1,7 +1,7 @@
 // App.tsx
 import React, { useState } from 'react';
-import { LoginScreen } from '../../components/AttendanceKiosk/otros/LoginScreen';
 import AttendanceKiosk from '../../components/AttendanceKiosk';
+import { LoginScreen } from '../../components/AttendanceKiosk/otros/LoginScreen';
 
 export default function App() {
   const [session, setSession] = useState<{ uid: number; pass: string } | null>(null);

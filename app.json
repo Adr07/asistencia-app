@@ -17,6 +17,10 @@
         "enabled": true,
         "fallbackToCacheTimeout": 0,
         "url": "https://expo.dev/accounts/adry01/projects/asistencia-app/builds/ee285e9d-9dfe-40f5-ac23-06d972b5018c"
+      },
+      "bundleIdentifier": "com.adry01.asistenciaapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
