@@ -1,7 +1,6 @@
-import React from "react";
-import { View, Text, Button } from "react-native";
+import { Button, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
-import { CheckedInStepProps } from "../attendanceStepsTS/AttendanceStepTypes";
+import { CheckedInStepProps } from "./AttendanceStepTypes";
 
 export function CheckedInStep({
   checkInTime,
@@ -11,16 +10,18 @@ export function CheckedInStep({
   loading,
 }: CheckedInStepProps) {
   return (
-    <View>
-      <Text style={styles.message}>Entrada registrada a las {checkInTime}</Text>
-      <View style={styles.centered}>
-        <Text style={styles.timerLabel}>Contador:</Text>
-        <Text style={styles.timer}>{formatTimer(timer)}</Text>
-      </View>
-      <View style={styles.buttonRow}>
-        <View style={styles.buttonContainer}>
-          <View style={styles.button}>
-            <Button title="OK" onPress={() => { if (onNext) onNext(); }} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center', padding: 16 }}>
+        <Text style={[styles.message, { textAlign: 'center', marginBottom: 16 }]}>Entrada registrada a las {checkInTime}</Text>
+        <View style={[styles.centered, { marginBottom: 16, width: '100%', alignItems: 'center', justifyContent: 'center' }]}> 
+          <Text style={styles.timerLabel}>Contador:</Text>
+          <Text style={styles.timer}>{formatTimer(timer)}</Text>
+        </View>
+        <View style={[styles.buttonRow, { width: '100%', justifyContent: 'center', alignItems: 'center' }]}> 
+          <View style={styles.buttonContainer}>
+            <View style={[styles.button, { backgroundColor: '#b71c1c' }]}> 
+              <Button title="OK" color="#b71c1c" onPress={() => { if (onNext) onNext(); }} />
+            </View>
           </View>
         </View>
       </View>

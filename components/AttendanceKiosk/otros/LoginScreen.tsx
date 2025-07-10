@@ -1,7 +1,8 @@
 // components/otros/LoginScreen.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Button,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +18,7 @@ type Props = {
 };
 
 export function LoginScreen({ onLogin }: Props) {
-  const colors = useThemeColors();
+  const colors = useThemeColors({ light: undefined, dark: undefined }, 'background');
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,14 +59,27 @@ export function LoginScreen({ onLogin }: Props) {
 
       onLogin(uid, isAdmin, pass);
     } catch (err: any) {
-      showMessage("Error de conexión", err.message || String(err));
+      console.error('[LoginScreen] Error al crear entrada:', err);
+      // Mostrar el error completo en consola y también como alerta en la UI
+      let errorMsg = err && err.message ? err.message : String(err);
+      if (err && err.stack) {
+        errorMsg += "\n" + err.stack;
+      }
+      showMessage("Error de conexión", errorMsg);
+      alert("[LoginScreen] Error al crear entrada:\n" + errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <Image
+        source={require("../../../assets/images/0bc530f3-4ccd-4a3f-b8ba-f85b8990b0aa_removalai_preview.png")}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="PROBOTEC logo"
+      />
       <Text style={[styles.title, { color: colors.text }]}>Iniciar sesión</Text>
       <TextInput
         placeholder="Usuario"
@@ -99,18 +113,26 @@ export function LoginScreen({ onLogin }: Props) {
         ]}
         editable={!loading}
       />
-      <Button
-        title={loading ? "Cargando..." : "ENTRAR"}
-        color={colors.buttonBg}
-        onPress={handleLogin}
-        disabled={loading}
-      />
+      <View style={{ borderRadius: 10, overflow: 'hidden', marginTop: 10 }}>
+        <Button
+          title={loading ? "Cargando..." : "ENTRAR"}
+          color="#b71c1c"
+          onPress={handleLogin}
+          disabled={loading}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: "center" },
+  logo: {
+    width: 320,
+    height: 120,
+    alignSelf: "center",
+    marginBottom: 30,
+  },
   input: {
     height: 40,
     borderWidth: 1,
@@ -119,5 +141,4 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   title: { fontSize: 30, fontWeight: "bold", textAlign: "center", marginBottom: 20 },
-
 });

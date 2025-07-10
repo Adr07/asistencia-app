@@ -55,6 +55,7 @@ const attendanceStyles = StyleSheet.create({
     overflow: 'hidden',
     minWidth: 120,
     marginHorizontal: 4,
+    backgroundColor: '#b71c1c',
   },
   buttonContainer: {
     width: '100%',

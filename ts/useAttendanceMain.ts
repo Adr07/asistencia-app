@@ -18,7 +18,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [timer, setTimer] = useState<number>(0);
-  const [description, setDescription] = useState<string>("");
+  const [observaciones, setObservaciones] = useState<string>("");
   
   // Timestamps para calcular horas trabajadas correctamente
   const [checkInTimestamp, setCheckInTimestamp] = useState<number | null>(null); // Timestamp del check-in inicial
@@ -58,36 +58,32 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   const handleCheckIn = async () => {
     try {
       setLoading(true);
-      
       // Capturar ubicación antes del check-in
       const currentLocation = await getCurrentLocation();
-      
       if (!currentLocation) {
-        // Si no se pudo obtener ubicación, mostrar el error específico del hook
         const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
         showMessage("Ubicación requerida", errorMessage);
         setLoading(false);
         return;
       }
-      
       setCheckInLocation(currentLocation);
-      
       await handleCheck({
         action: 'sign_in',
         uid: props.uid,
         pass: props.pass,
         selectedProject,
         selectedTask,
-        description,
+        observaciones,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude }, // Usar geo en lugar de location
+        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
         setCheckInTime,
         setCheckInTimestamp,
         setCurrentTaskStartTimestamp,
         setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
         setLoading,
         showMessage,
+        setObservaciones,
       });
     } catch (error) {
       setLoading(false);
@@ -100,39 +96,31 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   };
 
   // Función adaptadora para manejar check-out (salida)
-  const handleCheckOut = async (customDescription?: string, progress?: number) => {
+  const handleCheckOut = async (customObservaciones?: string, progress?: number) => {
     try {
       setLoading(true);
-      
-      // Mostrar advertencia si no hay proyecto/tarea, pero continuar para cerrar el registro
       if (!selectedProject || !selectedTask) {
         showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
       }
-      
-      // Capturar ubicación antes del check-out
       const currentLocation = await getCurrentLocation();
-      
       if (!currentLocation) {
-        // Si no se pudo obtener ubicación, mostrar el error específico del hook
         const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
         showMessage("Ubicación requerida", errorMessage);
         setLoading(false);
         return;
       }
-      
       setCheckOutLocation(currentLocation);
-      
       await handleCheck({
         action: 'sign_out',
         uid: props.uid,
         pass: props.pass,
         selectedProject,
         selectedTask,
-        description: typeof customDescription === 'string' ? customDescription : description,
+        observaciones: typeof customObservaciones === 'string' ? customObservaciones : observaciones,
         progress,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude }, // Usar geo en lugar de location
+        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
         setCheckOutTime,
         setCurrentTaskStartTimestamp,
         setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
@@ -140,13 +128,10 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         setFullTime,
         setLoading,
         showMessage,
-        // Limpiar estado después del check-out
-        setDescription: () => setDescription(""),
+        setObservaciones,
         setSelectedProject: () => setSelectedProject(null),
         setSelectedTask: () => setSelectedTask(null),
       });
-      
-      // Limpiar ubicaciones después del check-out
       clearLocation();
       setCheckInLocation(null);
       setCheckOutLocation(null);
@@ -178,8 +163,8 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
     setSelectedTask,
     timer,
     setTimer,
-    description,
-    setDescription,
+    observaciones,
+    setObservaciones,
     checkInTimestamp,
     setCheckInTimestamp,
     currentTaskStartTimestamp, // Timestamp de inicio de tarea actual

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { odooSearch } from '../db/odooApi';
+import { getEmployeeAllProjects, getProjectActivities } from '../db/odooApi';
 
 interface OdooAutocompleteInputProps {
   model: string; // 'project.project' o 'project.task'
@@ -24,6 +24,7 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
   pass,
   extraDomain = [],
   labelField = 'name',
+  ...props
 }) => {
   // Excluir proyecto interno si es project.project
   let domain = [...extraDomain];
@@ -46,52 +47,45 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    console.log('[OdooAutocompleteInput] useEffect ejecutado. Query:', query, 'Model:', model);
+    // Solo buscar si hay suficiente texto
     if (query.length < 2) {
       setResults([]);
       setShowDropdown(false);
-      console.log('[OdooAutocompleteInput] Query muy corto, no busca.');
       return;
     }
     let active = true;
     setLoading(true);
     const fetchResults = async () => {
       try {
-        const searchDomain = [[searchField, 'ilike', query], ...domain];
-        console.log('[OdooAutocompleteInput] searchDomain:', JSON.stringify(searchDomain));
-        const idsResult = await odooSearch({
-          model,
-          domain: searchDomain,
-          uid,
-          pass,
-          limit: 10,
-        });
         let items: any[] = [];
-        const idsArr = Array.isArray(idsResult) ? idsResult : [];
-        console.log('[OdooAutocompleteInput] idsResult:', idsResult);
-        if (idsArr.length > 0) {
-          const readRes = await (await import('../db/odooApi')).odooRead({
-            model,
-            domain: [['id', 'in', idsArr]],
-            fields: ['id', labelField],
-            uid,
-            pass,
-          });
-          items = Array.isArray(readRes) ? readRes : [];
-          console.log('[OdooAutocompleteInput] readRes:', readRes);
-        }
-        // Filtro extra frontend para nunca mostrar el proyecto interno
         if (model === 'project.project') {
-          const antes = items.length;
-          items = items.filter(p => p.id !== 1 && !(p[labelField]?.toLowerCase().includes('interno')));
-          console.log('[OdooAutocompleteInput] Filtro frontend aplicado. Antes:', antes, 'Después:', items.length, 'Items:', items);
+          // Buscar proyectos por nombre
+          const proyectos = await getEmployeeAllProjects({ uid, pass });
+          items = Array.isArray(proyectos)
+            ? proyectos.filter((p: any) =>
+                p[labelField]?.toLowerCase().includes(query.toLowerCase()) &&
+                p.id !== 1 &&
+                !(p[labelField]?.toLowerCase().includes('interno'))
+              )
+            : [];
+        } else if (model === 'project.task' || model === 'project.activity') {
+          // Buscar actividades por nombre, requiere project_id en extraDomain
+          const projectIdFilter = extraDomain.find((d: any) => Array.isArray(d) && d[0] === 'project_id');
+          const projectId = projectIdFilter ? projectIdFilter[2] : null;
+          if (projectId) {
+            const actividades = await getProjectActivities({ uid, pass, project_id: projectId });
+            items = Array.isArray(actividades)
+              ? actividades.filter((a: any) =>
+                  a[labelField]?.toLowerCase().includes(query.toLowerCase())
+                )
+              : [];
+          }
         }
         if (active) {
           setResults(items);
           setShowDropdown(true);
         }
       } catch (e) {
-        console.log('[OdooAutocompleteInput] ERROR:', e);
         setResults([]);
         setShowDropdown(false);
       } finally {
@@ -103,7 +97,7 @@ export const OdooAutocompleteInput: React.FC<OdooAutocompleteInputProps> = ({
       active = false;
       clearTimeout(timeout);
     };
-  }, [query, model, searchField, uid, pass, domain, labelField]);
+  }, [query, model, searchField, uid, pass, extraDomain, labelField]);
 
   // Sincronizar el valor externo (value) con el input, pero solo si el usuario no está escribiendo
   useEffect(() => {

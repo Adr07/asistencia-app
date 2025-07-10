@@ -1,6 +1,32 @@
+
 import { useCallback, useEffect, useState } from "react";
+import { getPedirAvance } from '../../../db/odooApi';
 import { DB, RPC_URL } from "../otros/config";
 import { rpcCall } from "../otros/rpc";
+
+// Custom hook para pedir avance
+export function usePedirAvanceMsg(uid: number, pass: string) {
+  const [pedirAvanceMsg, setPedirAvanceMsg] = useState<string>("no");
+  useEffect(() => {
+    async function fetchPedirAvance() {
+      try {
+        if (uid && pass) {
+          const msg = await getPedirAvance({ uid, pass });
+          if (msg === 'no') {
+            console.log('[usePedirAvanceMsg] Valor devuelto por getPedirAvance: no');
+          } else {
+            console.log('[usePedirAvanceMsg] Valor devuelto por getPedirAvance:', msg);
+          }
+          setPedirAvanceMsg(typeof msg === 'string' ? msg : String(msg));
+        }
+      } catch (e) {
+        setPedirAvanceMsg("no");
+      }
+    }
+    fetchPedirAvance();
+  }, [uid, pass]);
+  return pedirAvanceMsg;
+}
 
 /**
  * Hook para obtener y mantener el nombre e inicial del usuario desde Odoo.

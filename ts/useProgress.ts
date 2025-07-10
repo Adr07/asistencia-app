@@ -1,16 +1,16 @@
 import { useState } from "react";
 
-export function useProgress() {
-  const [progress, setProgress] = useState<number | undefined>(undefined);
-  function safeSetProgress(val: any) {
+export function useAvance() {
+  const [avance, setAvance] = useState<number | undefined>(undefined);
+  function safeSetAvance(val: any) {
     if (val && typeof val === 'object' && val.nativeEvent) return; // Ignorar eventos
     // Permitir solo números válidos o vacío
     if (val === '' || val === undefined || val === null) {
-      setProgress(undefined);
+      setAvance(undefined);
       return;
     }
     const num = Number(val);
-    if (!isNaN(num)) setProgress(num);
+    if (!isNaN(num)) setAvance(num);
   }
-  return { progress, setProgress: safeSetProgress };
+  return { avance, setAvance: safeSetAvance };
 }

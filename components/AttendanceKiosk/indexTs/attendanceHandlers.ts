@@ -6,30 +6,30 @@ import { handleCheck } from "../../../ts/handleCheck";
  * Concatena el progreso a la descripción si está disponible.
  */
 export function useCheckOutWithProgress({
-  description,
-  progressInput,
+  observaciones,
+  avanceInput,
   selectedProject,
   selectedTask,
   handleCheckOut,
 }: {
-  description: string;
-  progressInput?: string;
+  observaciones: string;
+  avanceInput?: string;
   selectedProject: any;
   selectedTask: any;
-  handleCheckOut: (desc: string, progress?: number) => void;
+  handleCheckOut: (obs: string, avance?: number) => void;
 }) {
   return useCallback(() => {
-    let finalDescription = description;
-    let progressValue: number | undefined = undefined;
+    let finalObservaciones = observaciones;
+    let avanceValue: number | undefined = undefined;
 
-    // Si hay progreso, concatenarlo a la descripción
-    if (progressInput && progressInput.trim() !== "") {
-      finalDescription = `${description} | Progreso: ${progressInput}%`;
-      progressValue = Number(progressInput);
+    // Si hay avance, concatenarlo a las observaciones
+    if (avanceInput && avanceInput.trim() !== "") {
+      finalObservaciones = `${observaciones} | Progreso: ${avanceInput}%`;
+      avanceValue = Number(avanceInput);
     }
 
-    handleCheckOut(finalDescription, progressValue);
-  }, [description, progressInput, handleCheckOut]);
+    handleCheckOut(finalObservaciones, avanceValue);
+  }, [observaciones, avanceInput, handleCheckOut]);
 }
 
 /**
@@ -37,36 +37,30 @@ export function useCheckOutWithProgress({
  * Guarda la descripción actual y cambia el estado de la UI.
  */
 export function useStartChangingTask({
-  description,
-  progressInput, // <-- NUEVO: recibir el progreso actual
-  setLastDescription,
-  setLastProgress,
-  setLastProject, // <-- NUEVO
-  setLastTask,    // <-- NUEVO
-  selectedProject, // <-- NUEVO
-  selectedTask,    // <-- NUEVO
+  observaciones,
+  avanceInput,
+  setLastProject,
+  setLastTask,
+  selectedProject,
+  selectedTask,
   setShowChangingTask,
   setStep,
 }: {
-  description: string;
-  progressInput: string; // <-- NUEVO: tipo para el progreso actual
-  setLastDescription: (v: string) => void;
-  setLastProgress: (v: string) => void;
-  setLastProject: (v: any) => void; // <-- NUEVO
-  setLastTask: (v: any) => void;    // <-- NUEVO
-  selectedProject: any; // <-- NUEVO
-  selectedTask: any;    // <-- NUEVO
+  observaciones: string;
+  avanceInput: string;
+  setLastProject: (v: any) => void;
+  setLastTask: (v: any) => void;
+  selectedProject: any;
+  selectedTask: any;
   setShowChangingTask: (v: boolean) => void;
   setStep: (v: "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task") => void;
 }) {
   return useCallback(() => {
-    setLastDescription(description);
-    setLastProgress(progressInput || ""); // <-- GUARDAR EL PROGRESO ACTUAL
-    setLastProject(selectedProject); // <-- GUARDAR PROYECTO ANTERIOR
-    setLastTask(selectedTask);       // <-- GUARDAR TAREA ANTERIOR
+    setLastProject(selectedProject);
+    setLastTask(selectedTask);
     setShowChangingTask(true);
     setStep("changing_task");
-  }, [description, progressInput, setLastDescription, setLastProgress, setLastProject, setLastTask, selectedProject, selectedTask, setShowChangingTask, setStep]);
+  }, [selectedProject, selectedTask, setLastProject, setLastTask, setShowChangingTask, setStep]);
 }
 
 /**
@@ -78,17 +72,17 @@ export function useHandleChangeTaskFlow({
   pendingTask,
   selectedProject,
   selectedTask,
-  lastDescription,
-  lastProgress,
-  description,
-  progressInput,
+  lastObservaciones,
+  lastAvance,
+  observaciones,
+  avanceInput,
   setCheckOutTime,
   setStep,
   setWorkedHours,
   setFullTime,
   setLoading,
   showMessage,
-  setDescription,
+  setObservaciones,
   setSelectedProject,
   setSelectedTask,
   setCheckInTime,
@@ -110,7 +104,7 @@ export function useHandleChangeTaskFlow({
           setStep,
           setSelectedProject,
           setSelectedTask,
-          setDescription,
+          setObservaciones,
           setLoading,
           showMessage,
           newProject: pendingProject,
@@ -119,23 +113,25 @@ export function useHandleChangeTaskFlow({
         setShowChangingTask(false);
         return;
       }
-      // Guarda la tarea/proyecto/desc/progreso ANTERIORES antes de limpiar
-      const prevProject = selectedProject;
-      const prevTask = selectedTask;
-      const prevDescription = lastDescription;
-      const prevProgress = lastProgress;
-      // Cierra el registro actual con los datos anteriores
+      // Guarda la tarea/proyecto/obs/avance ANTERIORES antes de limpiar
+      // Cierra el registro actual con los datos actuales del input
+      // LOG para depuración de observaciones y avance antes de handleCheck
+      console.log('[handleChangeTaskFlow][sign_out] observaciones:', observaciones);
+      console.log('[handleChangeTaskFlow][sign_out] avanceInput:', avanceInput);
+      console.log('[handleChangeTaskFlow][sign_out] typeof observaciones:', typeof observaciones, 'valor:', observaciones);
+      console.log('[handleChangeTaskFlow][sign_out] typeof avanceInput:', typeof avanceInput, 'valor:', avanceInput);
+      const obsSignOut = avanceInput && avanceInput.trim() !== ""
+        ? `${observaciones} | Progreso: ${avanceInput}%`
+        : observaciones;
+      console.log('[handleChangeTaskFlow][sign_out] observaciones que se envía:', obsSignOut);
       await handleCheck({
         action: "sign_out",
         uid,
         pass,
-        selectedProject: prevProject,
-        selectedTask: prevTask,
-        description:
-          prevProgress && prevProgress.trim() !== ""
-            ? `${prevDescription} | Progreso: ${prevProgress}%`
-            : prevDescription,
-        progress: prevProgress ? Number(prevProgress) : undefined,
+        selectedProject,
+        selectedTask,
+        observaciones: obsSignOut,
+        progress: avanceInput ? Number(avanceInput) : undefined,
         setCheckOutTime,
         setStep: (v: string) => setStep(v),
         setWorkedHours,
@@ -143,22 +139,27 @@ export function useHandleChangeTaskFlow({
         setLoading,
         checkInTimestamp: null,
         showMessage,
-        setDescription: () => setDescription(""),
+        ...(typeof setObservaciones === 'function' ? { setObservaciones: () => setObservaciones("") } : {}),
         setSelectedProject: () => setSelectedProject(null),
         setSelectedTask: () => setSelectedTask(null),
       });
       // Ahora sí, cambia a la nueva tarea (check-in)
-      let newTaskDescription = description;
-      if (progressInput && progressInput.trim() !== "") {
-        newTaskDescription = `${description} | Progreso: ${progressInput}%`;
-      }
+      // LOG para depuración de observaciones y avance antes de handleCheck (sign_in)
+      console.log('[handleChangeTaskFlow][sign_in] observaciones:', observaciones);
+      console.log('[handleChangeTaskFlow][sign_in] avanceInput:', avanceInput);
+      console.log('[handleChangeTaskFlow][sign_in] typeof observaciones:', typeof observaciones, 'valor:', observaciones);
+      console.log('[handleChangeTaskFlow][sign_in] typeof avanceInput:', typeof avanceInput, 'valor:', avanceInput);
+      const obsSignIn = avanceInput && avanceInput.trim() !== ""
+        ? `${observaciones} | Progreso: ${avanceInput}%`
+        : observaciones;
+      console.log('[handleChangeTaskFlow][sign_in] observaciones que se envía:', obsSignIn);
       await handleCheck({
         action: "sign_in",
         uid,
         pass,
         selectedProject: pendingProject,
         selectedTask: pendingTask,
-        description: newTaskDescription,
+        observaciones: obsSignIn,
         setCheckInTime,
         setCheckInTimestamp,
         setStep: (v: string) => {
@@ -169,10 +170,10 @@ export function useHandleChangeTaskFlow({
         },
         setLoading,
         showMessage,
-        setDescription: () => setDescription(""),
+        ...(typeof setObservaciones === 'function' ? { setObservaciones: () => setObservaciones("") } : {}),
         setSelectedProject: () => setSelectedProject(pendingProject),
         setSelectedTask: () => setSelectedTask(pendingTask),
       });
     }
-  }, [pendingProject, pendingTask, selectedProject, selectedTask, lastDescription, lastProgress, description, progressInput, setCheckOutTime, setStep, setWorkedHours, setFullTime, setLoading, showMessage, setDescription, setSelectedProject, setSelectedTask, setCheckInTime, setCheckInTimestamp, setShowChangingTask, uid, pass, handleChangeTask]);
+  }, [pendingProject, pendingTask, selectedProject, selectedTask, observaciones, avanceInput, setCheckOutTime, setStep, setWorkedHours, setFullTime, setLoading, showMessage, setObservaciones, setSelectedProject, setSelectedTask, setCheckInTime, setCheckInTimestamp, setShowChangingTask, uid, pass, handleChangeTask]);
 }

@@ -1,9 +1,9 @@
 import React from "react";
 import { useLocation } from "../../hooks/useLocation";
 import { handleChangeTask } from '../../ts/handleChangeTask';
-import { useProgress } from "../../ts/useProgress";
-import { useCheckOutWithProgress, useStartChangingTask } from "./indexTs/attendanceHandlers";
-import { usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
+import { useAvance } from "../../ts/useProgress";
+import { useStartChangingTask } from "./indexTs/attendanceHandlers";
+import { usePedirAvanceMsg, usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
 import { RPC_URL } from "./otros/config";
 
 interface AttendanceKioskProps {
@@ -30,9 +30,7 @@ export function useAttendanceKioskLogic(
     pendingTask,
     setPendingTask: _setPendingTask,
     lastDescription,
-    setLastDescription,
     lastProgress,
-    setLastProgress,
     lastProject,
     setLastProject,
     lastTask,
@@ -49,7 +47,7 @@ export function useAttendanceKioskLogic(
   }, [_setPendingTask]);
 
   const [showChangingTask, setShowChangingTask] = React.useState(false);
-  const { progress, setProgress: setProgressInput } = useProgress();
+  const { avance, setAvance: setAvanceInput } = useAvance();
   const {
     step,
     loading,
@@ -60,7 +58,7 @@ export function useAttendanceKioskLogic(
     selectedTask, setSelectedTask,
     setStep,
     timer, formatTimer,
-    description, setDescription,
+    observaciones, setObservaciones,
     fullTime,
     handleCheckIn, handleCheckOut,
     fetchEmployeeId,
@@ -70,6 +68,9 @@ export function useAttendanceKioskLogic(
     checkInTimestamp,
     currentTaskStartTimestamp, setCurrentTaskStartTimestamp,
   } = attendanceHooks.useAttendanceMain(props);
+
+  // FORZAR EL PASO A before_checkout PARA DEPURACIÓN
+  // (Eliminado: efecto temporal que forzaba el paso a before_checkout para depuración)
 
   const { error: locationError, getCurrentLocation } = useLocation();
   const [showLocationAlert, setShowLocationAlert] = React.useState(false);
@@ -94,20 +95,27 @@ export function useAttendanceKioskLogic(
     }
   }, [checkLocationBeforeAction]);
 
-  const handleCheckOutWithProgress = useCheckOutWithProgress({
-    description,
-    progressInput: progress !== undefined ? progress.toString() : "",
-    selectedProject,
-    selectedTask,
-    handleCheckOut: (desc, prog) => {
-      handleCheckOut(desc, prog);
-    },
-  });
+  // Ref para mantener el valor más reciente de observaciones
+  const observacionesRef = React.useRef(observaciones);
+  React.useEffect(() => {
+    observacionesRef.current = observaciones;
+  }, [observaciones]);
+
+  // Wrapper para asegurar que se use SIEMPRE el valor más reciente del input
+  const handleCheckOutWithProgress = React.useCallback((obsFromInput?: string) => {
+    // Prioridad: argumento directo > ref > estado
+    const obsToSend = typeof obsFromInput === 'string'
+      ? obsFromInput
+      : (typeof observacionesRef.current === 'string' ? observacionesRef.current : observaciones);
+    console.log('[useAttendanceKioskLogic] handleCheckOutWithProgress observaciones:', obsToSend, 'avance:', avance);
+    setTimeout(() => {
+      console.log('[useAttendanceKioskLogic] POST handleCheckOutWithProgress observaciones:', obsToSend);
+    }, 0);
+    handleCheckOut(obsToSend, avance !== undefined ? avance : undefined);
+  }, [avance, handleCheckOut]);
   const startChangingTask = useStartChangingTask({
-    description,
-    progressInput: progress !== undefined ? progress.toString() : "",
-    setLastDescription,
-    setLastProgress,
+    observaciones,
+    avanceInput: avance !== undefined ? avance.toString() : "",
     setLastProject,
     setLastTask,
     selectedProject,
@@ -138,7 +146,7 @@ export function useAttendanceKioskLogic(
       setStep: (v: any) => setStep(v),
       setSelectedProject,
       setSelectedTask,
-      setDescription,
+      setObservaciones,
       setLoading,
       showMessage,
       RPC_URL,
@@ -146,8 +154,8 @@ export function useAttendanceKioskLogic(
       newTask: pendingTask,
       prevProject,
       prevTask,
-      description,
-      progressInput: lastProgress || "",
+      observaciones,
+      avanceInput: avance !== undefined ? avance.toString() : "",
       checkInTimestamp,
       currentTaskStartTimestamp,
       setCurrentTaskStartTimestamp,
@@ -171,7 +179,7 @@ export function useAttendanceKioskLogic(
   }, [
     lastProject,
     lastTask,
-    lastProgress,
+    avance,
     getCurrentLocation,
     locationError,
     setLocationAlertMessage,
@@ -184,10 +192,10 @@ export function useAttendanceKioskLogic(
     setStep,
     setSelectedProject,
     setSelectedTask,
-    setDescription,
     setLoading,
     showMessage,
-    description,
+    observaciones,
+    setObservaciones,
     checkInTimestamp,
     currentTaskStartTimestamp,
     setCurrentTaskStartTimestamp,
@@ -198,17 +206,17 @@ export function useAttendanceKioskLogic(
 
   const handleNextFromCheckedIn = () => {
     setStep("before_checkout");
-    setProgressInput("");
+    setAvanceInput("");
   };
   const handleRestartFromCheckedOut = () => {
     setStep("welcome");
     setSelectedProject(null);
     setSelectedTask(null);
-    setDescription("");
+    setObservaciones("");
     setCheckInTime("");
     setCheckOutTime("");
     setWorkedHours("");
-    setProgressInput("");
+    setAvanceInput("");
   };
   const handleContinueFromProjectTask = () => {
     setStep("checked_in");
@@ -217,6 +225,8 @@ export function useAttendanceKioskLogic(
     handleChangeTaskFlow(pendingProject, pendingTask);
   }, [pendingProject, pendingTask, handleChangeTaskFlow]);
 
+  // Hook para pedir avance
+  const pedirAvanceMsg = usePedirAvanceMsg(props.uid, props.pass);
   return {
     userName,
     userInitial,
@@ -224,10 +234,7 @@ export function useAttendanceKioskLogic(
     setPendingProject,
     pendingTask,
     setPendingTask,
-    lastDescription,
-    setLastDescription,
-    lastProgress,
-    setLastProgress,
+    // lastDescription, setLastDescription, lastProgress, setLastProgress removed (migrated to observaciones/avance)
     lastProject,
     setLastProject,
     lastTask,
@@ -236,8 +243,8 @@ export function useAttendanceKioskLogic(
     safeSetPendingTask,
     showChangingTask,
     setShowChangingTask,
-    progress,
-    setProgressInput,
+    avance,
+    setAvanceInput,
     step,
     loading,
     checkInTime,
@@ -253,8 +260,8 @@ export function useAttendanceKioskLogic(
     setStep,
     timer,
     formatTimer,
-    description,
-    setDescription,
+    observaciones,
+    setObservaciones,
     fullTime,
     handleCheckIn,
     handleCheckOut,
@@ -277,6 +284,7 @@ export function useAttendanceKioskLogic(
     setShowLocationAlert,
     locationAlertMessage,
     setLocationAlertMessage,
-    handleLocationRetry
+    handleLocationRetry,
+    pedirAvanceMsg
   };
 }

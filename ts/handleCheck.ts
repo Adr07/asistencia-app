@@ -1,10 +1,8 @@
-import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
-import { odooCreate, odooRead, odooSearch, odooWrite } from "../db/odooApi";
+ import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
+import { attendanceManual } from "../db/odooApi";
 import {
-    buildAnalyticLine,
-    calcDiffHours,
-    getNowLocalTimeString,
-    getNowUTCString,
+  calcDiffHours,
+  getNowLocalTimeString
 } from "../utils/attendanceUtils";
 
 /**
@@ -19,7 +17,7 @@ export async function handleCheck({
   pass,
   selectedProject,
   selectedTask,
-  description,
+  observaciones,
   checkInTimestamp,
   currentTaskStartTimestamp,
   setCheckInTime,
@@ -32,7 +30,7 @@ export async function handleCheck({
   showMessage,
   geo,
   setLoading,
-  setDescription,
+  setObservaciones,
   setSelectedProject,
   setSelectedTask, 
   progress, 
@@ -42,7 +40,7 @@ export async function handleCheck({
   pass: string;
   selectedProject: any;
   selectedTask: any;
-  description: string;
+  observaciones: string;
   checkInTimestamp?: number | null;
   currentTaskStartTimestamp?: number | null;
   setCheckInTime?: (v: string) => void;
@@ -55,56 +53,43 @@ export async function handleCheck({
   showMessage?: (title: string, msg: string) => void;
   geo?: { latitude: number; longitude: number } | null;
   setLoading: (v: boolean) => void;
-  setDescription?: (v: string) => void;
+  setObservaciones?: (v: string) => void;
   setSelectedProject?: (v: any) => void;
   setSelectedTask?: (v: any) => void;
   progress?: number;
 }) {
   setLoading(true);
+  console.log('[handleCheck] INICIO', { action, observaciones, progress, setObservacionesType: typeof setObservaciones });
   try {
-    // Obtener ID del empleado actual desde Odoo
-    const empleados = (await odooRead({
-      model: "hr.employee",
-      fields: ["id"],
-      domain: [["resource_id.user_id", "=", uid]],
-      uid,
-      pass,
-      limit: 1,
-    })) as any[];
-    
-    if (!empleados.length) throw new Error("Empleado no encontrado");
-    const empId = empleados[0].id;
-    
-    const nowUTC = getNowUTCString();
-    
+    // El id de empleado y el control de check-in/check-out lo maneja attendanceManual en el backend
     if (action === "sign_in") {
-      // ENTRADA (CHECK-IN): Crear nuevo registro de asistencia
-      const vals: any = { 
-        employee_id: empId, 
-        check_in: nowUTC,
-        in_mode: 'systray' // Modo de entrada desde app móvil
-      };
-      if (geo) {
-        vals.in_latitude = Number(geo.latitude);
-        vals.in_longitude = Number(geo.longitude);
-        // Agregar enlace de Google Maps para ubicación de entrada
-        vals.x_in_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
-      }
-      
-      await odooCreate({
-        model: "hr.attendance",
-        vals,
+      console.log('[handleCheck] Acción: sign_in');
+      console.log('[handleCheck] ANTES DE ENVIAR AL BACKEND (sign_in) observaciones:', observaciones);
+      await attendanceManual({
         uid,
         pass,
+        project_id: selectedProject?.id,
+        actividad_id: selectedTask?.id,
+        next_action: "check_in",
+        observation: observaciones || "",
+        quality: true, // O ajusta según lógica de calidad
+        progress,
+        long: geo?.longitude ?? 0,
+        lat: geo?.latitude ?? 0,
       });
-      
       // Actualizar UI y establecer timestamps
       setCheckInTime?.(getNowLocalTimeString());
       const now = Date.now();
       setCheckInTimestamp?.(now);
       setCurrentTaskStartTimestamp?.(now); // Establecer inicio de tarea actual
       setStep?.("checked_in");
-      setDescription?.("");
+      console.log('[handleCheck] setObservaciones (sign_in):', setObservaciones, typeof setObservaciones, 'valor observaciones:', observaciones);
+      if (typeof setObservaciones === 'function') {
+        // setObservaciones(""); // Ya no se limpia aquí
+        console.log('[handleCheck] setObservaciones llamada correctamente (sign_in), valor actual:', observaciones);
+      } else {
+        console.log('[handleCheck] setObservaciones NO es función (sign_in)');
+      }
       setSelectedProject?.(null);
       setSelectedTask?.(null);
       (showMessage || defaultShowMessage)(
@@ -112,150 +97,56 @@ export async function handleCheck({
         "Tu entrada ha sido registrada correctamente."
       );
     } else {
-      // SALIDA (CHECK-OUT): Cerrar registro y registrar horas trabajadas
-      
-      // Buscar el registro de asistencia abierto
-      const ids = (await odooSearch({
-        model: "hr.attendance",
-        domain: [
-          ["employee_id", "=", empId],
-          ["check_out", "=", false],
-        ],
+      console.log('[handleCheck] Acción: sign_out');
+      console.log('[handleCheck] ANTES DE ENVIAR AL BACKEND (sign_out) observaciones:', observaciones);
+      await attendanceManual({
         uid,
         pass,
-        limit: 1,
-      })) as number[];
-      
-      if (!ids.length) {
-        throw new Error(
-          "No se encontró un registro de entrada abierto para hacer check-out."
-        );
-      }
-      
-      // Si no hay proyecto o tarea seleccionados, solo cerrar el registro
-      if (!selectedProject || !selectedTask) {
-        const checkoutVals: any = { 
-          check_out: nowUTC,
-          out_mode: 'systray' // Modo de salida desde app móvil
-        };
-        if (geo) {
-          checkoutVals.out_latitude = Number(geo.latitude);
-          checkoutVals.out_longitude = Number(geo.longitude);
-          // Agregar enlace de Google Maps para ubicación de salida
-          checkoutVals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
-        }
-        
-        await odooWrite({
-          model: "hr.attendance",
-          ids,
-          vals: checkoutVals,
-          uid,
-          pass,
-        });
-        
-        setCheckOutTime?.(getNowLocalTimeString());
-        setCurrentTaskStartTimestamp?.(null);
-        setStep?.("checked_out");
-        setWorkedHours?.("0");
-        setFullTime?.("");
-        setDescription?.("");
-        setSelectedProject?.(null);
-        setSelectedTask?.(null);
-        (showMessage || defaultShowMessage)(
-          "Registro cerrado",
-          "No se seleccionó proyecto o tarea. El registro de asistencia fue cerrado sin registrar horas en ninguna tarea."
-        );
-        return;
-      }
-      
-      // Cerrar el registro de asistencia con check-out
-      const vals: any = { 
-        check_out: nowUTC,
-        out_mode: 'systray' // Modo de salida desde app móvil
-      };
-      if (geo) {
-        vals.out_latitude = Number(geo.latitude);
-        vals.out_longitude = Number(geo.longitude);
-        // Agregar enlace de Google Maps para ubicación de salida
-        vals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
-        // Agregar iframe embed HTML para mostrar mapa directamente
-        vals.x_out_location_url = `https://www.google.com/maps?q=${geo.latitude},${geo.longitude}`;
-      }
-      
-      await odooWrite({
-        model: "hr.attendance",
-        ids,
-        vals,
-        uid,
-        pass,
+        project_id: selectedProject?.id,
+        actividad_id: selectedTask?.id,
+        next_action: "check_out",
+        observation: observaciones || "",
+        quality: true, // O ajusta según lógica de calidad
+        progress,
+        long: geo?.longitude ?? 0,
+        lat: geo?.latitude ?? 0,
       });
-      
-      // Calcular horas trabajadas y actualizar UI
+      // Calcular tiempo trabajado antes de resetear
+      let fullTimeStr = "";
+      let diffHours = 0;
+      if (typeof currentTaskStartTimestamp === 'number' && currentTaskStartTimestamp > 0) {
+        const result = calcDiffHours(currentTaskStartTimestamp);
+        fullTimeStr = result.fullTimeStr;
+        diffHours = result.diffHours;
+      }
       setCheckOutTime?.(getNowLocalTimeString());
       setCurrentTaskStartTimestamp?.(null);
       setStep?.("checked_out");
-      
-      // Usar el timestamp correcto según el contexto:
-      // - currentTaskStartTimestamp: para tareas después de un cambio de tarea
-      // - checkInTimestamp: para la primera tarea desde el check-in inicial
-      const timestampToUse = currentTaskStartTimestamp || checkInTimestamp;
-      const { diffHours, fullTimeStr } = calcDiffHours(timestampToUse);
-      
-      setWorkedHours?.(Number(diffHours).toFixed(2));
+      setWorkedHours?.(diffHours.toFixed(2));
       setFullTime?.(fullTimeStr);
-      setDescription?.("");
+      console.log('[handleCheck] setObservaciones (sign_out):', setObservaciones, typeof setObservaciones, 'valor observaciones:', observaciones);
+      if (typeof setObservaciones === 'function') {
+        // setObservaciones(""); // Ya no se limpia aquí
+        console.log('[handleCheck] setObservaciones llamada correctamente (sign_out), valor actual:', observaciones);
+      } else {
+        console.log('[handleCheck] setObservaciones NO es función (sign_out)');
+      }
       setSelectedProject?.(null);
       setSelectedTask?.(null);
-      
-      // Crear línea analítica en Odoo para registrar las horas trabajadas
-      if (selectedProject && selectedTask) {
-        const analyticLine = buildAnalyticLine({
-          customDescription: arguments[0]?.customDescription,
-          description,
-          uid,
-          projectId: selectedProject.id,
-          taskId: selectedTask.id,
-          diffHours,
-        });
-        
-        try {
-          await odooCreate({
-            model: "account.analytic.line",
-            vals: analyticLine,
-            uid,
-            pass,
-          });
-          
-          // Actualizar progreso de la tarea si fue proporcionado
-          if (progress !== undefined && selectedTask) {
-            await odooWrite({
-              model: "project.task",
-              ids: [selectedTask.id],
-              vals: { progress },
-              uid,
-              pass,
-            });
-          }
-          
-          (showMessage || defaultShowMessage)(
-            "Tarea actualizada",
-            "Las horas trabajadas han sido registradas correctamente en la tarea."
-          );
-        } catch (err: any) {
-          (showMessage || defaultShowMessage)(
-            "Error al crear línea de tarea",
-            err?.message || JSON.stringify(err)
-          );
-        }
-      }
+      (showMessage || defaultShowMessage)(
+        "Registro cerrado",
+        "El registro de asistencia fue cerrado."
+      );
     }
   } catch (e: any) {
     // Muestra error si algo falla en el proceso
+    console.log('[handleCheck] ERROR', e);
     (showMessage || defaultShowMessage)(
       "Error de conexión",
       e?.stack || JSON.stringify(e) || e?.message || String(e)
     );
   } finally {
     setLoading(false); // Finaliza el estado de carga
+    console.log('[handleCheck] FIN', { action });
   }
 }

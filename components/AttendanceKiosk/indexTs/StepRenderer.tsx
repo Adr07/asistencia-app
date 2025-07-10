@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import {
   BeforeCheckoutStep,
   CheckedInStep,
@@ -34,19 +34,19 @@ export function StepRenderer({
             selectedTask={props.selectedTask}
             setSelectedProject={props.setSelectedProject}
             setSelectedTask={props.setSelectedTask}
-            description={props.description}
-            setDescription={props.setDescription}
+            observaciones={props.observaciones}
+            setObservaciones={props.setObservaciones}
             pendingProject={props.pendingProject}
             pendingTask={props.pendingTask}
-            setPendingProject={props.setPendingProject}
-            setPendingTask={props.setPendingTask}
+            // setPendingProject y setPendingTask no existen en ProjectTaskStepProps, solo pendingProject/pendingTask
             safeSetPendingProject={props.safeSetPendingProject}
             safeSetPendingTask={props.safeSetPendingTask}
-            handleChangeTaskFlow={props.handleChangeTaskFlow}
-            progressInput={props.progressInput}
-            setProgressInput={props.setProgressInput}
+            // handleChangeTaskFlow no existe en ProjectTaskStepProps
+            avanceInput={props.avanceInput}
+            setAvanceInput={props.setAvanceInput}
             currentProject={props.currentProject}
             currentTask={props.currentTask}
+            pedirAvanceMsg={props.pedirAvanceMsg}
           />
         );
       }
@@ -64,19 +64,19 @@ export function StepRenderer({
           selectedTask={props.selectedTask}
           setSelectedProject={props.setSelectedProject}
           setSelectedTask={props.setSelectedTask}
-          description={props.description}
-          setDescription={props.setDescription}
+          observaciones={props.observaciones}
+          setObservaciones={props.setObservaciones}
           pendingProject={props.pendingProject}
           pendingTask={props.pendingTask}
-          setPendingProject={props.setPendingProject}
-          setPendingTask={props.setPendingTask}
+          // setPendingProject y setPendingTask no existen en ProjectTaskStepProps, solo pendingProject/pendingTask
           safeSetPendingProject={props.safeSetPendingProject}
           safeSetPendingTask={props.safeSetPendingTask}
-          handleChangeTaskFlow={props.handleChangeTaskFlow}
-          progressInput={props.progressInput}
-          setProgressInput={props.setProgressInput}
+          // handleChangeTaskFlow no existe en ProjectTaskStepProps
+          avanceInput={props.avanceInput}
+          setAvanceInput={props.setAvanceInput}
           currentProject={props.currentProject}
           currentTask={props.currentTask}
+          pedirAvanceMsg={props.pedirAvanceMsg}
         />
       );
     case "checked_in":
@@ -87,8 +87,10 @@ export function StepRenderer({
           timer={props.timer}
           formatTimer={props.formatTimer}
           loading={props.loading}
-          description={props.description}
-          setDescription={props.setDescription}
+          observaciones={props.observaciones}
+          setObservaciones={props.setObservaciones}
+          avanceInput={props.avanceInput}
+          setAvanceInput={props.setAvanceInput}
         />
       );
     case "before_checkout":
@@ -100,10 +102,11 @@ export function StepRenderer({
           loading={props.loading}
           timer={props.timer}
           formatTimer={props.formatTimer}
-          description={props.description}
-          setDescription={props.setDescription}
-          progressInput={props.progressInput}
-          setProgressInput={props.setProgressInput}
+          observaciones={props.observaciones}
+          setObservaciones={props.setObservaciones}
+          avanceInput={props.avanceInput}
+          setAvanceInput={props.setAvanceInput}
+          // progressInput and setProgressInput removed, use avanceInput and setAvanceInput only
         />
       );
     case "changing_task":
@@ -129,15 +132,16 @@ export function StepRenderer({
           // For changing_task mode, use the wrapper functions as the setters
           setSelectedProject={props.safeSetPendingProject}
           setSelectedTask={props.safeSetPendingTask}
-          description={props.description}
-          setDescription={props.setDescription}
+          observaciones={props.observaciones}
+          setObservaciones={props.setObservaciones}
+          avanceInput={props.avanceInput}
+          setAvanceInput={props.setAvanceInput}
           pendingProject={props.pendingProject}
           pendingTask={props.pendingTask}
-          setPendingProject={props.setPendingProject}
-          setPendingTask={props.setPendingTask}
+          // setPendingProject y setPendingTask no existen en ProjectTaskStepProps, solo pendingProject/pendingTask
           safeSetPendingProject={props.safeSetPendingProject}
           safeSetPendingTask={props.safeSetPendingTask}
-          handleChangeTaskFlow={props.handleChangeTaskFlow}
+          // handleChangeTaskFlow no existe en ProjectTaskStepProps
           currentProject={props.currentProject}
           currentTask={props.currentTask}
         />

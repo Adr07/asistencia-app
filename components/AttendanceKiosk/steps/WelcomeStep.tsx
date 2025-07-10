@@ -1,8 +1,7 @@
-import React from "react";
-import { ScrollView, Text, View, Button } from "react-native";
-import ProyectList from "../otros/ProyectList";
+import { Button, ScrollView, Text, View } from "react-native";
 import styles from "../AttendanceStyles";
-import { WelcomeStepProps } from "../attendanceStepsTS/AttendanceStepTypes";
+import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
+import { WelcomeStepProps } from "./AttendanceStepTypes";
 
 export function WelcomeStep({
   loading,
@@ -23,36 +22,38 @@ export function WelcomeStep({
 }: WelcomeStepProps) {
   return (
     <ScrollView
-      contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+      contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.welcome}>¡Bienvenido!</Text>
-      <ProyectList
-        uid={uid}
-        pass={pass}
-        selectedProject={selectedProject}
-        selectedTask={selectedTask}
-        onSelectProject={setSelectedProject}
-        onSelectTask={setSelectedTask}
-      />
-      <View style={styles.buttonRow}>
-        <View style={[styles.button, { backgroundColor: "#bdbdbd" }]}> 
-          <Button
-            title="Cancelar"
-            color="#333"
-            onPress={onCancel}
-            disabled={loading}
-          />
-        </View>
-        <View style={[styles.button, { backgroundColor: "#388e3c" }]}> 
-          <Button
-            title="Continuar"
-            color="#fff"
-            onPress={onContinue}
-            disabled={
-              loading || !selectedProject || !selectedTask
-            }
-          />
+      <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
+        <Text style={[styles.welcome, { textAlign: 'center', marginBottom: 16 }]}>¡Bienvenido!</Text>
+        <ProjectTaskDropdowns
+          uid={uid}
+          pass={pass}
+          selectedProject={selectedProject}
+          selectedTask={selectedTask}
+          onSelectProject={setSelectedProject}
+          onSelectTask={setSelectedTask}
+        />
+        <View style={[styles.buttonRow, { width: '100%', justifyContent: 'center' }]}> 
+          <View style={[styles.button, { backgroundColor: '#b71c1c' }]}> 
+            <Button
+              title="Cancelar"
+              color="#b71c1c"
+              onPress={onCancel}
+              disabled={loading}
+            />
+          </View>
+          <View style={[styles.button, { backgroundColor: '#b71c1c' }]}> 
+            <Button
+              title="Continuar"
+              color="#b71c1c"
+              onPress={onContinue}
+              disabled={
+                loading || !selectedProject || !selectedTask
+              }
+            />
+          </View>
         </View>
       </View>
     </ScrollView>

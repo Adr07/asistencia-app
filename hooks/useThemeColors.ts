@@ -16,7 +16,7 @@ const Colors = {
   },
 };
 
-export default function useThemeColors() {
+export default function useThemeColors(p0: { light: string | undefined; dark: string | undefined; }, p1: string) {
   const scheme = useColorScheme(); // 'dark', 'light', o null :contentReference[oaicite:1]{index=1}
   return scheme === 'dark' ? Colors.dark : Colors.light;
 }

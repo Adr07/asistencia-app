@@ -3,6 +3,8 @@ import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, 
 import { useProjectTaskDropdownsLogic } from '../../../ts/useProjectTaskDropdownsLogic';
 import ProjectTaskDropdownsStyles from './ProjectTaskDropdownsStyles';
 
+// Componente Dropdown personalizado
+
 interface ProjectTaskDropdownsProps {
   uid: number;
   pass: string;
@@ -13,6 +15,7 @@ interface ProjectTaskDropdownsProps {
   hideTitle?: boolean;
   currentProject?: any;
   currentTask?: any;
+  pedirAvanceMsg?: string;
 }
 
 interface DropdownProps {
@@ -24,13 +27,15 @@ interface DropdownProps {
   disabled?: boolean;
   renderItem?: (item: any) => string;
   keyExtractor?: (item: any) => string;
+  currentTask?: any;
+  currentProject?: any;
 }
 
-// Componente Dropdown personalizado
-function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.name, keyExtractor = (item) => item.id.toString() }: DropdownProps) {
+function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.label || item.value || item.name, keyExtractor = (item) => item.id.toString(), pedirAvanceMsg, uid, pass, currentTask, currentProject }: DropdownProps & { pedirAvanceMsg?: string, uid: number, pass: string, currentTask?: any, currentProject?: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
 
+  // El valor seleccionado siempre viene de props.selectedValue
   const handleSelect = (item: any) => {
     onSelect(item);
     setIsOpen(false);
@@ -41,6 +46,10 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
   const filteredData = search.trim().length > 0
     ? data.filter(item => renderItem(item).toLowerCase().includes(search.trim().toLowerCase()))
     : data;
+
+  // El valor seleccionado viene de selectedValue (prop)
+  // Para deshabilitar la opción actual, recibimos currentTask/currentProject como prop
+  // Así que recibimos currentTask/currentProject como prop y lo usamos directamente
 
   return (
     <View style={ProjectTaskDropdownsStyles.dropdownWrapper}>
@@ -64,6 +73,10 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
             !selectedValue && ProjectTaskDropdownsStyles.placeholderText
           ]}>
             {selectedValue ? renderItem(selectedValue) : placeholder}
+            {/* Mostrar el mensaje de avance al lado del nombre en el botón si hay selección */}
+            {selectedValue && pedirAvanceMsg && (
+              <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
+            )}
           </Text>
         )}
         <Text style={ProjectTaskDropdownsStyles.dropdownArrow}>{isOpen ? '▲' : '▼'}</Text>
@@ -99,17 +112,36 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
             <FlatList
               data={filteredData}
               keyExtractor={keyExtractor}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    ProjectTaskDropdownsStyles.dropdownItem,
-                    selectedValue && keyExtractor(selectedValue) === keyExtractor(item) && ProjectTaskDropdownsStyles.selectedDropdownItem
-                  ]}
-                  onPress={() => handleSelect(item)}
-                >
-                  <Text style={ProjectTaskDropdownsStyles.dropdownItemText}>{renderItem(item)}</Text>
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                // Solo deshabilitar la actividad actual, nunca el proyecto actual
+                let isCurrent = false;
+                if (typeof item.id !== 'undefined') {
+                  // Para actividades, deshabilitar la actual
+                  if (typeof (currentTask?.id) !== 'undefined' && item.id === currentTask?.id) {
+                    isCurrent = true;
+                  }
+                }
+                const isSelected = selectedValue && keyExtractor(selectedValue) === keyExtractor(item);
+                return (
+                  <TouchableOpacity
+                    style={[
+                      ProjectTaskDropdownsStyles.dropdownItem,
+                      isSelected && ProjectTaskDropdownsStyles.selectedDropdownItem,
+                      isCurrent && { opacity: 0.5 }
+                    ]}
+                    onPress={() => !isCurrent && handleSelect(item)}
+                    disabled={isCurrent}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={ProjectTaskDropdownsStyles.dropdownItemText}>{renderItem(item)}{isCurrent ? ' (actual)' : ''}</Text>
+                      {/* Mostrar el mensaje de avance global al lado de cada actividad */}
+                      {pedirAvanceMsg && (
+                        <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
               style={ProjectTaskDropdownsStyles.dropdownList}
               showsVerticalScrollIndicator={true}
               ListEmptyComponent={<Text style={{ padding: 10, color: '#888' }}>No hay resultados</Text>}
@@ -129,46 +161,56 @@ export default function ProjectTaskDropdowns({
   selectedTask, 
   hideTitle, 
   currentProject, 
-  currentTask 
+  currentTask, 
+  pedirAvanceMsg
 }: ProjectTaskDropdownsProps) {
   const {
     proyectos,
-    availableTasks,
+    availableActivities,
     loading,
     loadingTasks
   } = useProjectTaskDropdownsLogic(uid, pass, selectedProject, currentTask);
+
+  // Mostrar en consola los proyectos y actividades cada vez que cambian
+  React.useEffect(() => {
+    console.log('Proyectos:', proyectos);
+  }, [proyectos]);
+  React.useEffect(() => {
+    console.log('Actividades disponibles:', availableActivities);
+  }, [availableActivities]);
 
   const handleProjectChange = useCallback((project: any) => {
     onSelectProject(project);
     onSelectTask(null);
   }, [onSelectProject, onSelectTask]);
 
-  const handleTaskChange = useCallback((task: any) => {
-    const isCurrentTask = currentTask && currentTask.id === task.id;
-    if (!isCurrentTask) {
-      onSelectTask(task);
+  const handleActivityChange = useCallback((actividad: any) => {
+    const isCurrent = currentTask && currentTask.id === actividad.id;
+    if (!isCurrent) {
+      onSelectTask(actividad);
     }
   }, [onSelectTask, currentTask]);
 
-  const renderTask = useCallback((task: any) => {
-    const isCurrentTask = currentTask && currentTask.id === task.id;
-    return isCurrentTask ? `${task.name} (actual)` : task.name;
+  const renderActivity = useCallback((actividad: any) => {
+    const isCurrent = currentTask && currentTask.id === actividad.id;
+    // Solo el nombre de la actividad
+    return isCurrent ? `${actividad.label || actividad.value || actividad.name} (actual)` : (actividad.label || actividad.value || actividad.name);
   }, [currentTask]);
 
   return (
     <View style={ProjectTaskDropdownsStyles.container}>
       {!hideTitle && (
-        <Text style={ProjectTaskDropdownsStyles.title}>Selecciona Proyecto y Tarea</Text>
+        <Text style={ProjectTaskDropdownsStyles.title}>Selecciona Proyecto y Actividad</Text>
       )}
 
-      {/* Información de proyecto/tarea actual si está en modo cambio */}
-      {currentProject && currentTask && (
+      {/* Información de proyecto/tarea actual solo en modo cambio de tarea */}
+      {hideTitle && currentProject && currentTask && (
         <View style={ProjectTaskDropdownsStyles.currentInfo}>
           <Text style={ProjectTaskDropdownsStyles.currentLabel}>Proyecto actual:</Text>
-          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentProject.name}</Text>
-          <Text style={ProjectTaskDropdownsStyles.currentLabel}>Tarea actual:</Text>
-          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentTask.name}</Text>
-          <Text style={ProjectTaskDropdownsStyles.changeLabel}>Selecciona nueva tarea:</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentProject.label || currentProject.value || currentProject.name}</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentLabel}>Actividad actual:</Text>
+          <Text style={ProjectTaskDropdownsStyles.currentText}>{currentTask.label || currentTask.value || currentTask.name}</Text>
+          <Text style={ProjectTaskDropdownsStyles.changeLabel}>Selecciona nueva actividad:</Text>
         </View>
       )}
 
@@ -182,31 +224,47 @@ export default function ProjectTaskDropdowns({
           placeholder="Selecciona un proyecto..."
           loading={loading}
           disabled={loading}
+          uid={uid}
+          pass={pass}
+          currentProject={currentProject}
         />
+        {/* Cartel si no hay proyectos */}
+        {!loading && proyectos.length === 0 && (
+          <Text style={{ color: '#888', marginTop: 8 }}>No hay proyectos disponibles</Text>
+        )}
       </View>
 
-      {/* Dropdown de Tareas */}
+      {/* Dropdown de Actividades */}
       <View style={ProjectTaskDropdownsStyles.fieldContainer}>
-        <Text style={ProjectTaskDropdownsStyles.label}>Tarea:</Text>
+        <Text style={ProjectTaskDropdownsStyles.label}>Actividad:</Text>
         <CustomDropdown
-          data={availableTasks}
+          data={availableActivities}
           selectedValue={selectedTask}
-          onSelect={handleTaskChange}
-          placeholder={selectedProject ? "Selecciona una tarea..." : "Primero selecciona un proyecto"}
+          onSelect={handleActivityChange}
+          placeholder={selectedProject ? "Selecciona una actividad..." : "Primero selecciona un proyecto"}
           loading={loadingTasks}
           disabled={loadingTasks || !selectedProject}
-          renderItem={renderTask}
+          renderItem={renderActivity}
+          uid={uid}
+          pass={pass}
+          pedirAvanceMsg={pedirAvanceMsg}
+          currentTask={currentTask}
         />
+        {/* Mensaje de avance eliminado de debajo del botón de actividad */}
+        {/* Cartel si no hay actividades */}
+        {!loadingTasks && selectedProject && availableActivities.length === 0 && (
+          <Text style={{ color: '#888', marginTop: 8 }}>No hay actividades disponibles para este proyecto</Text>
+        )}
       </View>
 
       {/* Texto de ayuda */}
       <View style={ProjectTaskDropdownsStyles.helpContainer}>
         <Text style={ProjectTaskDropdownsStyles.helpText}>
           {!selectedProject 
-            ? "Selecciona un proyecto para ver las tareas disponibles"
+            ? "Selecciona un proyecto para ver las actividades disponibles"
             : !selectedTask
-            ? "Selecciona una tarea para continuar"
-            : "✓ Proyecto y tarea seleccionados"
+            ? "Selecciona una actividad para continuar"
+            : "✓ Proyecto y actividad seleccionados"
           }
         </Text>
       </View>

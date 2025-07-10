@@ -3,7 +3,7 @@ export { handleChangeTask } from "../../ts/handleChangeTask";
 export { handleCheck } from "../../ts/handleCheck";
 export { resetFields } from "../../ts/resetFields";
 export { useAttendanceMain } from "../../ts/useAttendanceMain";
-export { useDescription } from "../../ts/useDescription";
+export { useObservaciones } from "../../ts/useDescription";
 export { useEmployeeId } from "../../ts/useEmployeeId";
 export { useLocation } from "../../ts/useLocation";
 
