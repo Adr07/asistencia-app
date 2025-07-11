@@ -1,9 +1,9 @@
 import * as React from "react";
 import {
-  BeforeCheckoutStep,
-  CheckedInStep,
-  CheckedOutStep,
-  ProjectTaskStep
+    BeforeCheckoutStep,
+    CheckedInStep,
+    CheckedOutStep,
+    ProjectTaskStep
 } from "../AttendanceSteps";
 
 /**
@@ -91,12 +91,14 @@ export function StepRenderer({
           setObservaciones={props.setObservaciones}
           avanceInput={props.avanceInput}
           setAvanceInput={props.setAvanceInput}
+          selectedProject={props.selectedProject}
+          selectedTask={props.selectedTask}
         />
       );
     case "before_checkout":
       return (
         <BeforeCheckoutStep
-          onCheckOut={props.handleCheckOutWithProgress}
+          onCheckOut={(observaciones, quality) => props.handleCheckOutWithProgress(observaciones, quality)}
           onChangeTask={props.startChangingTask}
           workedHours={props.workedHours}
           loading={props.loading}
@@ -106,7 +108,8 @@ export function StepRenderer({
           setObservaciones={props.setObservaciones}
           avanceInput={props.avanceInput}
           setAvanceInput={props.setAvanceInput}
-          // progressInput and setProgressInput removed, use avanceInput and setAvanceInput only
+          selectedProject={props.selectedProject}
+          selectedTask={props.selectedTask}
         />
       );
     case "changing_task":

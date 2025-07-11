@@ -157,9 +157,8 @@ export async function attendanceManual({
   console.log('[attendanceManual] ID de empleado encontrado:', emp_id);
 
   
-  // Odoo espera: [ids], emp_id, long, lat, message, project_id, actividad_id, next_action, observaciones, no_calidad, checkout, cambio, avance
-  // El primer argumento es un array de IDs (empleados), luego los argumentos posicionales exactamente en este orden:
-  // Determinar si es un check-out
+  // Odoo espera: [ids], emp_id, long, lat, message, project_id, actividad_id, next_action, observaciones, calidad, checkout, cambio, avance
+  // Enviamos el valor de calidad tal cual, para mayor claridad y compatibilidad futura
   const isCheckout = next_action === 'check_out' || next_action === 'checkout' || next_action === 'salida';
   const args = [
     [emp_id], // array de IDs
@@ -171,7 +170,7 @@ export async function attendanceManual({
     actividad_id, // actividad_id
     next_action, // next_action
     observation, // observaciones
-    !quality, // no_calidad
+    quality, // calidad (enviar tal cual)
     isCheckout, // checkout
     false, // cambio
     progress ?? 0 // avance

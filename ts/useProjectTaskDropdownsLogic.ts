@@ -18,7 +18,9 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
       try {
         const res = await getEmployeeAllProjects({ uid, pass });
         if (res && Array.isArray(res)) {
-          setProyectos(res);
+          // Filtrar proyecto interno (id === 1 o nombre incluye 'interno')
+          const filtered = res.filter((p: any) => p.id !== 1 && !(typeof p.value === 'string' && p.value.toLowerCase().includes('interno')));
+          setProyectos(filtered);
         }
       } catch (error) {
         showMessage('Error al cargar proyectos');
@@ -38,10 +40,11 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
     async function fetchActivities() {
       setLoadingTasks(true);
       try {
-        // Permitir project_id 1 (Interno) y cualquier otro
         const res = await getProjectActivities({ uid, pass, project_id: selectedProject.id });
         if (res && Array.isArray(res)) {
-          setActividades(res);
+          // Filtrar actividad general (id === 1 o nombre incluye 'general')
+          const filtered = res.filter((a: any) => a.id !== 1 && !(typeof a.value === 'string' && a.value.toLowerCase().includes('general')));
+          setActividades(filtered);
         }
       } catch (error) {
         showMessage('Error al cargar actividades');

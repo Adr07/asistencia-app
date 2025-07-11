@@ -96,7 +96,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   };
 
   // Función adaptadora para manejar check-out (salida)
-  const handleCheckOut = async (customObservaciones?: string, progress?: number) => {
+  const handleCheckOut = async (customObservaciones?: string, progress?: number, quality?: boolean) => {
     try {
       setLoading(true);
       if (!selectedProject || !selectedTask) {
@@ -118,6 +118,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         selectedTask,
         observaciones: typeof customObservaciones === 'string' ? customObservaciones : observaciones,
         progress,
+        quality,
         checkInTimestamp,
         currentTaskStartTimestamp,
         geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },

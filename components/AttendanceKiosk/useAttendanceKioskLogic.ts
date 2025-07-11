@@ -29,8 +29,6 @@ export function useAttendanceKioskLogic(
     setPendingProject: _setPendingProject,
     pendingTask,
     setPendingTask: _setPendingTask,
-    lastDescription,
-    lastProgress,
     lastProject,
     setLastProject,
     lastTask,
@@ -102,17 +100,17 @@ export function useAttendanceKioskLogic(
   }, [observaciones]);
 
   // Wrapper para asegurar que se use SIEMPRE el valor más reciente del input
-  const handleCheckOutWithProgress = React.useCallback((obsFromInput?: string) => {
+  const handleCheckOutWithProgress = React.useCallback((obsFromInput: string, quality: boolean) => {
     // Prioridad: argumento directo > ref > estado
     const obsToSend = typeof obsFromInput === 'string'
       ? obsFromInput
       : (typeof observacionesRef.current === 'string' ? observacionesRef.current : observaciones);
-    console.log('[useAttendanceKioskLogic] handleCheckOutWithProgress observaciones:', obsToSend, 'avance:', avance);
+    console.log('[useAttendanceKioskLogic] handleCheckOutWithProgress observaciones:', obsToSend, 'avance:', avance, 'calidad:', quality);
     setTimeout(() => {
       console.log('[useAttendanceKioskLogic] POST handleCheckOutWithProgress observaciones:', obsToSend);
     }, 0);
-    handleCheckOut(obsToSend, avance !== undefined ? avance : undefined);
-  }, [avance, handleCheckOut]);
+    handleCheckOut(obsToSend, avance !== undefined ? avance : undefined, quality);
+  }, [avance, handleCheckOut, observaciones]);
   const startChangingTask = useStartChangingTask({
     observaciones,
     avanceInput: avance !== undefined ? avance.toString() : "",

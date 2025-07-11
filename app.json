@@ -4,7 +4,6 @@
     "slug": "asistencia-app",
     "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Component.png",
     "scheme": "assistencia",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -26,7 +25,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo_app_1.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "imageWidth": 192,
+        "imageHeight": 192
       },
       "edgeToEdgeEnabled": true,
       "package": "com.adry01.asistenciaapp",
@@ -71,6 +72,7 @@
         "projectId": "1968fc7e-f27a-439a-b104-402c896b8a1d"
       }
     },
+    "icon": "./assets/images/Component.png",
     "updates": {
       "url": "https://u.expo.dev/1968fc7e-f27a-439a-b104-402c896b8a1d"
     },
