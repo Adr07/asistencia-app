@@ -24,7 +24,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo_app_1.png",
+        "foregroundImage": "./assets/images/splash-icon.png",
         "backgroundColor": "#ffffff",
         "imageWidth": 192,
         "imageHeight": 192
@@ -42,8 +42,18 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/logo_app_1.png"
+      "favicon": "./assets/images/splash-icon.png"
     },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1968fc7e-f27a-439a-b104-402c896b8a1d"
+      }
+    },
+    "icon": "./assets/images/splash-icon.png",
     "plugins": [
       "expo-router",
       [
@@ -58,21 +68,15 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#ffffff",
-          "image": "./assets/images/logo_app_1.png",
-          "resizeMode": "contain"
+          "image": "./assets/images/splash-icon.png",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
         }
       ]
     ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "1968fc7e-f27a-439a-b104-402c896b8a1d"
-      }
-    },
-    "icon": "./assets/images/Component.png",
     "updates": {
       "url": "https://u.expo.dev/1968fc7e-f27a-439a-b104-402c896b8a1d"
     },
