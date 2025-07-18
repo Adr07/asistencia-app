@@ -22,7 +22,7 @@ export interface CheckedInStepProps {
 
 export interface BeforeCheckoutStepProps {
   workedHours?: string;
-  onCheckOut: (observaciones: string, quality: boolean) => void;
+  onCheckOut: (observaciones: string) => void;
   onChangeTask: () => void;
   loading?: boolean;
   timer: number;

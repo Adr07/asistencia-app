@@ -4,8 +4,6 @@ import { ProjectTaskStepProps } from "./AttendanceStepTypes";
 
 import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
 
-import React from "react";
-
 export function ProjectTaskStep({
   loading,
   uid,
@@ -40,8 +38,6 @@ export function ProjectTaskStep({
   const projectListSetProject = mode === "changing_task" && safeSetPendingProject ? safeSetPendingProject : setSelectedProject;
   const projectListSetTask = mode === "changing_task" && safeSetPendingTask ? safeSetPendingTask : setSelectedTask;
 
-
-
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}
@@ -64,11 +60,11 @@ export function ProjectTaskStep({
           currentTask={currentTask}
         />
 
-        {/* Mostrar campo de avance solo si pedirAvanceMsg es un mensaje (no "no") */}
-        {pedirAvanceMsg && pedirAvanceMsg !== "no" ? (
+        {/* Mostrar campo de avance solo si pedirAvanceMsg es válido y distinto de 'no' */}
+        {pedirAvanceMsg && pedirAvanceMsg !== "no" && (
           <View style={{ marginVertical: 16, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
             <TextInput
-              placeholder="Ingresa el avance"
+              placeholder="Ingresa el avance (%)"
               keyboardType="numeric"
               value={typeof avanceInput === 'string' ? avanceInput : ''}
               onChangeText={setAvanceInput ? setAvanceInput : () => {}}
@@ -79,13 +75,12 @@ export function ProjectTaskStep({
                 padding: 8,
                 fontSize: 16,
                 backgroundColor: '#fff',
-                width: '50%',
+                width: '100%',
                 textAlign: 'left',
-                alignSelf: 'center',
               }}
             />
           </View>
-        ) : null}
+        )}
 
         <View
           style={
