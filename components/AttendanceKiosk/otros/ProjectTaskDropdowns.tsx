@@ -74,9 +74,8 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
           ]}>
             {selectedValue ? renderItem(selectedValue) : placeholder}
             {/* Mostrar el mensaje de avance al lado del nombre en el botón si hay selección */}
-            {/* Mostrar mensaje solo si pedirAvanceMsg es un mensaje (no "no") */}
-            {selectedValue && pedirAvanceMsg && pedirAvanceMsg !== 'no' && (
-              <Text style={{ marginLeft: 8, color: '#1976d2', fontSize: 13 }}>{pedirAvanceMsg}</Text>
+            {selectedValue && pedirAvanceMsg && (
+              <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
             )}
           </Text>
         )}
@@ -136,9 +135,8 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={ProjectTaskDropdownsStyles.dropdownItemText}>{renderItem(item)}{isCurrent ? ' (actual)' : ''}</Text>
                       {/* Mostrar el mensaje de avance global al lado de cada actividad */}
-                      {/* Mostrar mensaje solo si pedirAvanceMsg es un mensaje (no "no") */}
-                      {pedirAvanceMsg && pedirAvanceMsg !== 'no' && (
-                        <Text style={{ marginLeft: 8, color: '#1976d2', fontSize: 13 }}>{pedirAvanceMsg}</Text>
+                      {pedirAvanceMsg && (
+                        <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
                       )}
                     </View>
                   </TouchableOpacity>

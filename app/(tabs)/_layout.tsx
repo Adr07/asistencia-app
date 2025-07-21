@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { HapticTab } from '../../components/HapticTab';
-// import CustomSettingsIcon from '../../components/ui/CustomSettingsIcon';
+import CustomSettingsIcon from '../../components/ui/CustomSettingsIcon';
 import { IconSymbol } from '../../components/ui/IconSymbol';
 import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
@@ -37,11 +37,7 @@ export default function TabLayout() {
         options={{
           title: 'Ajustes',
           tabBarIcon: ({ color }) => (
-            <IconSymbol
-              size={28}
-              name="chevron.left.forwardslash.chevron.right" // Usa el icono que prefieras, aquí es un ejemplo
-              color={colorScheme === 'dark' ? '#fff' : Colors.light.icon}
-            />
+            <CustomSettingsIcon size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
           ),
         }}
       />

@@ -1,8 +1,8 @@
  import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
 import { attendanceManual } from "../db/odooApi";
 import {
-    calcDiffHours,
-    getNowLocalTimeString
+  calcDiffHours,
+  getNowLocalTimeString
 } from "../utils/attendanceUtils";
 
 /**
@@ -33,8 +33,7 @@ export async function handleCheck({
   setObservaciones,
   setSelectedProject,
   setSelectedTask, 
-  progress,
-  quality,
+  progress, 
 }: {
   action: "sign_in" | "sign_out";
   uid: number;
@@ -58,7 +57,6 @@ export async function handleCheck({
   setSelectedProject?: (v: any) => void;
   setSelectedTask?: (v: any) => void;
   progress?: number;
-  quality?: boolean;
 }) {
   setLoading(true);
   console.log('[handleCheck] INICIO', { action, observaciones, progress, setObservacionesType: typeof setObservaciones });
@@ -108,7 +106,7 @@ export async function handleCheck({
         actividad_id: selectedTask?.id,
         next_action: "check_out",
         observation: observaciones || "",
-        quality: typeof quality === 'boolean' ? quality : true,
+        quality: true, // O ajusta según lógica de calidad
         progress,
         long: geo?.longitude ?? 0,
         lat: geo?.latitude ?? 0,
