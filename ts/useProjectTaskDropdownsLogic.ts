@@ -1,6 +1,17 @@
+// Stub temporal para getProjectActivities
 import { useEffect, useState } from 'react';
 import { showMessage } from '../components/AttendanceKiosk/otros/util';
-import { getEmployeeAllProjects, getProjectActivities } from '../db/odooApi';
+async function getProjectActivities({ uid, pass, project_id }: { uid: number; pass: string; project_id: number }): Promise<any[]> {
+  // Devuelve un array vacío para evitar errores
+  return [];
+}
+// import { getEmployeeAllProjects } from '../db/odooApi';
+
+// Stub temporal para getEmployeeAllProjects
+async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass: string }): Promise<any[]> {
+  // Devuelve un array vacío para evitar errores
+  return [];
+}
 
 export function useProjectTaskDropdownsLogic(uid: number, pass: string, selectedProject: any, currentTask: any) {
   const [proyectos, setProyectos] = useState<any[]>([]);

@@ -1,5 +1,6 @@
 
-import { DB, RPC_URL, rpcCall } from "../db/odooApi";
+import { rpcCall } from "../components/AttendanceKiosk/otros/rpc";
+import { DB, RPC_URL } from "../db/odooApi";
 
 export function useEmployeeId(uid: number, pass: string) {
   const fetchEmployeeId = async () => {
