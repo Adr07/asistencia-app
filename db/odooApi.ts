@@ -1,7 +1,37 @@
 // API central para interactuar con Odoo optimizada con lógica de Python
 // Este archivo implementa las funciones usando la lógica mejorada del archivo Python
-import { DB, RPC_URL } from "../components/AttendanceKiosk/otros/config";
-import { rpcCall } from "../components/AttendanceKiosk/otros/rpc";
+import { DB } from "../components/AttendanceKiosk/otros/config";
+
+// URL del backend local para proxy Odoo, puede ser cambiada dinámicamente
+let backendUrl = "http://localhost:3001/odoo/authenticate";
+export function setBackendUrl(url: string) {
+  backendUrl = url;
+}
+
+// Función para login (autenticación)
+async function rpcCallBackend(db: string, user: string, password: string) {
+  const body = { db, user, password };
+  const response = await fetch("http://localhost:3001/odoo/authenticate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
+  return await response.json();
+}
+
+// Función para ejecutar métodos sobre modelos Odoo
+async function rpcExecuteKw(db: string, uid: number, password: string, model: string, method: string, args: any[]) {
+  const body = { db, uid, password, model, method, args };
+  const response = await fetch("http://localhost:3001/odoo/execute_kw", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
+  const data = await response.json();
+  return data.result;
+}
 
 // current
 
@@ -25,27 +55,27 @@ export async function getPedirAvance({ uid, pass }: { uid: number; pass: string 
 export async function getPedirAvance({ uid, pass }: { uid: number; pass: string }): Promise<any> {
   try {
     // Buscar el id de empleado usando el uid
-    const empleados = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
-      RPC_URL
+    const empleados = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.employee",
+      "search_read",
+      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
     );
-    
     if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
       throw new Error('Empleado no encontrado para uid: ' + uid);
     }
-    
     const emp_id = empleados[0].id;
-    
     // Llamar al backend para obtener si se debe pedir avance
-    const result = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.attendance", "get_pedir_avance", [emp_id]],
-      RPC_URL
+    const result = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.attendance",
+      "get_pedir_avance",
+      [emp_id]
     );
-    
     return result;
   } catch (error) {
     console.error('[getPedirAvance] Error:', error);
@@ -59,27 +89,27 @@ export async function getPedirAvance({ uid, pass }: { uid: number; pass: string 
 export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass: string }): Promise<any[]> {
   try {
     // Buscar el id de empleado usando el uid
-    const empleados = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
-      RPC_URL
+    const empleados = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.employee",
+      "search_read",
+      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
     );
-    
     if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
       throw new Error('Empleado no encontrado para uid: ' + uid);
     }
-    
     const emp_id = empleados[0].id;
-    
     // Obtener proyectos usando el método correcto
-    const result: any = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.attendance", "get_employee_all_project", [emp_id]],
-      RPC_URL
+    const result: any = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.attendance",
+      "get_employee_all_project",
+      [emp_id]
     );
-    
     // Formatear respuesta para consistencia
     if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
       return result.map((p: any) => ({
@@ -88,7 +118,6 @@ export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass:
         label: p.name
       }));
     }
-    
     return result || [];
   } catch (error) {
     console.error('[getEmployeeAllProjects] Error:', error);
@@ -102,30 +131,29 @@ export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass:
 export async function getProjectActivities({ uid, pass, project_id }: { uid: number; pass: string; project_id: number }): Promise<any[]> {
   try {
     // Buscar el id de empleado usando el uid
-    const empleados = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
-      RPC_URL
+    const empleados = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.employee",
+      "search_read",
+      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
     );
-    
     if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
       throw new Error('Empleado no encontrado para uid: ' + uid);
     }
-    
     const emp_id = empleados[0].id;
-    
     // Llamar al backend para obtener actividades del proyecto
     console.log('[getProjectActivities] Llamando backend con:', { emp_id, project_id });
-    const result: any = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.attendance", "get_employee_all_actividad", [[], emp_id, project_id]],
-      RPC_URL
+    const result: any = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.attendance",
+      "get_employee_all_actividad",
+      [[], emp_id, project_id]
     );
-    
     console.log('[getProjectActivities] Respuesta del backend:', result);
-    
     // Formatear respuesta para consistencia
     if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
       return result.map((a: any) => ({
@@ -134,7 +162,6 @@ export async function getProjectActivities({ uid, pass, project_id }: { uid: num
         label: a.descripcion
       }));
     }
-    
     return result || [];
   } catch (error) {
     console.error('[getProjectActivities] Error al cargar actividades:', error);
@@ -172,31 +199,26 @@ export async function attendanceManual({
     const _long = typeof long === 'number' ? long : 0;
     const _lat = typeof lat === 'number' ? lat : 0;
     const message = "";
-
     // Buscar el registro de hr.employee correspondiente al usuario
     console.log('[attendanceManual] Buscando registro de hr.employee para uid:', uid);
-    
-    const empleados: number[] = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.employee", "search", [[['user_id', '=', uid]]]],
-      RPC_URL
+    const empleados: number[] = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.employee",
+      "search",
+      [[['user_id', '=', uid]]]
     );
-    
     console.log('[attendanceManual] Resultado de la búsqueda de hr.employee:', empleados);
-
     if (!empleados || empleados.length === 0) {
       const errorMsg = `No se encontró un registro de hr.employee para el usuario con uid: ${uid}`;
       console.error('[attendanceManual]', errorMsg);
       throw new Error(errorMsg);
     }
-
     const emp_id = empleados[0];
     console.log('[attendanceManual] ID de empleado encontrado:', emp_id);
-
     // Determinar si es un check-out
     const isCheckout = ['check_out', 'checkout', 'salida'].includes(next_action);
-
     // Preparar argumentos en el orden correcto según la implementación Python
     const args = [
       [emp_id],           // array de IDs
@@ -213,16 +235,15 @@ export async function attendanceManual({
       false,              // cambio
       progress || 0       // avance
     ];
-
     console.log('[attendanceManual] Atributos y valores:', args);
-
-    const result = await rpcCall(
-      "object",
-      "execute_kw",
-      [DB, uid, pass, "hr.employee", "attendance_manual", args],
-      RPC_URL
+    const result = await rpcExecuteKw(
+      DB,
+      uid,
+      pass,
+      "hr.employee",
+      "attendance_manual",
+      args
     );
-
     console.log('[attendanceManual] Respuesta del backend:', result);
     return result;
   } catch (error) {
@@ -231,6 +252,6 @@ export async function attendanceManual({
   }
 }
 
-// Re-exportar constantes para compatibilidad
-export { DB, RPC_URL };
+// Re-exportar constante para compatibilidad
+export { DB };
 
