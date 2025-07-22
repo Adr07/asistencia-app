@@ -3,21 +3,19 @@
 import { DB, RPC_URL } from "../components/AttendanceKiosk/otros/config";
 import { rpcCall } from "../components/AttendanceKiosk/otros/rpc";
 
-/**
- * Autenticar usuario y obtener UID
- */
-export async function authenticate(username: string, password: string): Promise<number | null> {
-  try {
-    const uid = await rpcCall(
-      "common",
-      "authenticate",
-      [DB, username, password, {}],
-      RPC_URL
-    ) as number;
-    return uid || null;
-  } catch (error) {
-    console.error('[authenticate] Error:', error);
-    return null;
+// current
+
+// Llama al método get_pedir_avance en el backend para saber si se debe pedir avance
+export async function getPedirAvance({ uid, pass }: { uid: number; pass: string }) {
+  // Buscar el id de empleado usando el uid
+  const empleados = await rpcCall(
+    "object",
+    "execute_kw",
+    [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
+    RPC_URL
+  );
+  if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
+    throw new Error('Empleado no encontrado para uid: ' + uid);
   }
 }
 
