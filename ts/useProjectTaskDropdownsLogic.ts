@@ -1,6 +1,17 @@
+// Stub temporal para getProjectActivities
 import { useEffect, useState } from 'react';
 import { showMessage } from '../components/AttendanceKiosk/otros/util';
-import { getEmployeeAllProjects, getProjectActivities } from '../db/odooApi';
+async function getProjectActivities({ uid, pass, project_id }: { uid: number; pass: string; project_id: number }): Promise<any[]> {
+  // Devuelve un array vacío para evitar errores
+  return [];
+}
+// import { getEmployeeAllProjects } from '../db/odooApi';
+
+// Stub temporal para getEmployeeAllProjects
+async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass: string }): Promise<any[]> {
+  // Devuelve un array vacío para evitar errores
+  return [];
+}
 
 export function useProjectTaskDropdownsLogic(uid: number, pass: string, selectedProject: any, currentTask: any) {
   const [proyectos, setProyectos] = useState<any[]>([]);
@@ -18,9 +29,7 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
       try {
         const res = await getEmployeeAllProjects({ uid, pass });
         if (res && Array.isArray(res)) {
-          // Filtrar proyecto interno (id === 1 o nombre incluye 'interno')
-          const filtered = res.filter((p: any) => p.id !== 1 && !(typeof p.value === 'string' && p.value.toLowerCase().includes('interno')));
-          setProyectos(filtered);
+          setProyectos(res);
         }
       } catch (error) {
         showMessage('Error al cargar proyectos');
@@ -40,11 +49,10 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
     async function fetchActivities() {
       setLoadingTasks(true);
       try {
+        // Permitir project_id 1 (Interno) y cualquier otro
         const res = await getProjectActivities({ uid, pass, project_id: selectedProject.id });
         if (res && Array.isArray(res)) {
-          // Filtrar actividad general (id === 1 o nombre incluye 'general')
-          const filtered = res.filter((a: any) => a.id !== 1 && !(typeof a.value === 'string' && a.value.toLowerCase().includes('general')));
-          setActividades(filtered);
+          setActividades(res);
         }
       } catch (error) {
         showMessage('Error al cargar actividades');

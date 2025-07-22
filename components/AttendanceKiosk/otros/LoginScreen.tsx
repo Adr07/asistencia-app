@@ -1,8 +1,9 @@
 // components/otros/LoginScreen.tsx
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -23,24 +24,54 @@ export function LoginScreen({ onLogin }: Props) {
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Logging de diagnóstico al cargar el componente
+  useEffect(() => {
+    console.group('🏁 COMPONENTE LOGIN INICIADO');
+    console.log('🌐 URL configurada:', RPC_URL);
+    console.log('🗄️ Base de datos configurada:', DB);
+    console.log('🌍 User Agent:', navigator.userAgent);
+    console.log('📱 Plataforma detectada:', Platform.OS);
+    console.groupEnd();
+  }, []);
+
   const handleLogin = async () => {
     if (!user || !pass) {
       showMessage("Error", "Completa todos los campos");
       return;
     }
+    
     try {
       setLoading(true);
+      
+      // Logging detallado de datos de conexión
+      console.group('🔐 INTENTO DE LOGIN');
+      console.log('👤 Usuario:', user);
+      console.log('🔒 Contraseña:', '***' + pass.slice(-2)); // Mostrar solo últimos 2 caracteres
+      console.log('🌐 URL del servidor:', RPC_URL);
+      console.log('🗄️ Base de datos:', DB);
+      console.log('📅 Timestamp:', new Date().toISOString());
+      console.groupEnd();
+      
+      console.log('🚀 Iniciando autenticación...');
+      
       const uid = await rpcCall<number>(
         "common",
         "authenticate",
         [DB, user, pass, {}],
         RPC_URL
       );
+      
       if (!uid) {
+        console.log('❌ Autenticación fallida: UID nulo o cero');
         showMessage("Error", "Usuario o contraseña incorrectos");
         return;
       }
-
+      
+      console.log('✅ Autenticación exitosa - UID:', uid);
+      console.log('✅ Autenticación exitosa - UID:', uid);
+      
+      console.log('🔍 Verificando permisos de administrador...');
+      
       const recs = await rpcCall<any[]>(
         "object",
         "execute_kw",
@@ -55,11 +86,32 @@ export function LoginScreen({ onLogin }: Props) {
         ],
         RPC_URL
       );
+      
+      console.log('📋 Grupos del usuario:', recs[0]?.groups_id);
+      
       const isAdmin = recs[0].groups_id.map((g: any) => g[0]).includes(1);
+      
+      console.group('✅ LOGIN COMPLETADO');
+      console.log('👤 UID:', uid);
+      console.log('🔧 Es administrador:', isAdmin);
+      console.log('📋 Grupos:', recs[0]?.groups_id);
+      console.groupEnd();
 
       onLogin(uid, isAdmin, pass);
     } catch (err: any) {
-      console.error('[LoginScreen] Error al crear entrada:', err);
+      console.group('❌ ERROR EN LOGIN');
+      console.error('🚨 Error capturado:', err);
+      console.log('📍 Datos de conexión en el momento del error:');
+      console.log('  - URL:', RPC_URL);
+      console.log('  - DB:', DB);
+      console.log('  - Usuario:', user);
+      console.log('🔍 Tipo de error:', err?.constructor?.name);
+      console.log('📝 Mensaje de error:', err?.message);
+      if (err?.stack) {
+        console.log('📊 Stack trace:', err.stack);
+      }
+      console.groupEnd();
+      
       // Mostrar el error completo en consola y también como alerta en la UI
       let errorMsg = err && err.message ? err.message : String(err);
       if (err && err.stack) {
