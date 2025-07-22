@@ -3,6 +3,8 @@
 import { DB, RPC_URL } from "../components/AttendanceKiosk/otros/config";
 import { rpcCall } from "../components/AttendanceKiosk/otros/rpc";
 
+// current
+
 // Llama al método get_pedir_avance en el backend para saber si se debe pedir avance
 export async function getPedirAvance({ uid, pass }: { uid: number; pass: string }) {
   // Buscar el id de empleado usando el uid
