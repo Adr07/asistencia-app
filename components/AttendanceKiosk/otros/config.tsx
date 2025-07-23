@@ -39,7 +39,7 @@ export const DEFAULT_RPC_URL = CONFIG[environment][platformKey];
 export let RPC_URL = DEFAULT_RPC_URL;
 
 // Nombre de la base de datos en Odoo
-export const DB = 'oodo18-pruebas';
+export const DB = 'registro';
 
 // Logging detallado de configuración
 console.group('🔧 CONFIGURACIÓN DE CONEXIÓN ODOO');

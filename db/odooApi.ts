@@ -22,15 +22,8 @@ async function rpcCallBackend(db: string, user: string, password: string) {
 
 // Función para ejecutar métodos sobre modelos Odoo
 async function rpcExecuteKw(db: string, uid: number, password: string, model: string, method: string, args: any[]) {
-  const body = { db, uid, password, model, method, args };
-  const response = await fetch("http://localhost:3001/odoo/execute_kw", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
-  const data = await response.json();
-  return data.result;
+  // El endpoint /odoo/execute_kw ha sido eliminado. Redirigir llamadas a endpoints dedicados.
+  throw new Error("rpcExecuteKw ya no debe usarse directamente. Usa los endpoints dedicados del backend.");
 }
 
 // current
@@ -43,68 +36,44 @@ async function rpcExecuteKw(db: string, uid: number, password: string, model: st
  */
 export async function getPedirAvance({ uid, pass }: { uid: number; pass: string }): Promise<any> {
   try {
-    // Buscar el id de empleado usando el uid
-    const empleados = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.employee",
-      "search_read",
-      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
-    );
-    if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
-      throw new Error('Empleado no encontrado para uid: ' + uid);
-    }
-    const emp_id = empleados[0].id;
-    // Llamar al backend para obtener si se debe pedir avance
-    const result = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.attendance",
-      "get_pedir_avance",
-      [emp_id]
-    );
-    return result;
+    // Llamar al endpoint dedicado en el backend para get_pedir_avance
+    const response = await fetch("http://localhost:3001/odoo/get_pedir_avance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ db: DB, uid, password: pass })
+    });
+    if (!response.ok) throw new Error("Error en backend get_pedir_avance: " + response.statusText);
+    const data = await response.json();
+    return data.result;
   } catch (error) {
     console.error('[getPedirAvance] Error:', error);
     throw error;
   }
 }
+console.log('🔄 RPC URL actualizada a:', backendUrl);
+console.log('🔄 DB actualizada a:', DB);
+//Valores de envio 
 
 /**
  * Obtener todos los proyectos asignados al empleado
  */
 export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass: string }): Promise<any[]> {
   try {
-    // Buscar el id de empleado usando el uid
-    const empleados = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.employee",
-      "search_read",
-      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
-    );
-    if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
-      throw new Error('Empleado no encontrado para uid: ' + uid);
-    }
-    const emp_id = empleados[0].id;
-    // Obtener proyectos usando el método correcto
-    const result: any = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.attendance",
-      "get_employee_all_project",
-      [emp_id]
-    );
-    // Formatear respuesta para consistencia
+    const payload = { db: DB, uid, password: pass, emp_id: uid };
+    console.log('[getEmployeeAllProjects] Valores de envío al backend:', payload);
+    const response = await fetch("http://localhost:3001/odoo/get_employee_all_project", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error("Error en backend get_employee_all_project: " + response.statusText);
+    const data = await response.json();
+    const result = data.result;
     if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
       return result.map((p: any) => ({
         id: p.id,
-        value: p.name,
-        label: p.name
+        value: p.name || p.value,
+        label: p.name || p.label || p.value
       }));
     }
     return result || [];
@@ -119,31 +88,15 @@ export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass:
  */
 export async function getProjectActivities({ uid, pass, project_id }: { uid: number; pass: string; project_id: number }): Promise<any[]> {
   try {
-    // Buscar el id de empleado usando el uid
-    const empleados = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.employee",
-      "search_read",
-      [[['user_id', '=', uid]], { fields: ['id'], limit: 1 }]
-    );
-    if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
-      throw new Error('Empleado no encontrado para uid: ' + uid);
-    }
-    const emp_id = empleados[0].id;
-    // Llamar al backend para obtener actividades del proyecto
-    console.log('[getProjectActivities] Llamando backend con:', { emp_id, project_id });
-    const result: any = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.attendance",
-      "get_employee_all_actividad",
-      [[], emp_id, project_id]
-    );
-    console.log('[getProjectActivities] Respuesta del backend:', result);
-    // Formatear respuesta para consistencia
+    // Llamar al endpoint dedicado en el backend para actividades por proyecto
+    const response = await fetch("http://localhost:3001/odoo/get_project_activities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ db: DB, uid, password: pass, project_id })
+    });
+    if (!response.ok) throw new Error("Error en backend get_project_activities: " + response.statusText);
+    const data = await response.json();
+    const result = data.result;
     if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
       return result.map((a: any) => ({
         id: a.id,
@@ -185,56 +138,27 @@ export async function attendanceManual({
   lat?: number;
 }): Promise<any> {
   try {
-    const _long = typeof long === 'number' ? long : 0;
-    const _lat = typeof lat === 'number' ? lat : 0;
-    const message = "";
-    // Buscar el registro de hr.employee correspondiente al usuario
-    console.log('[attendanceManual] Buscando registro de hr.employee para uid:', uid);
-    const empleados: number[] = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.employee",
-      "search",
-      [[['user_id', '=', uid]]]
-    );
-    console.log('[attendanceManual] Resultado de la búsqueda de hr.employee:', empleados);
-    if (!empleados || empleados.length === 0) {
-      const errorMsg = `No se encontró un registro de hr.employee para el usuario con uid: ${uid}`;
-      console.error('[attendanceManual]', errorMsg);
-      throw new Error(errorMsg);
-    }
-    const emp_id = empleados[0];
-    console.log('[attendanceManual] ID de empleado encontrado:', emp_id);
-    // Determinar si es un check-out
-    const isCheckout = ['check_out', 'checkout', 'salida'].includes(next_action);
-    // Preparar argumentos en el orden correcto según la implementación Python
-    const args = [
-      [emp_id],           // array de IDs
-      emp_id,             // El id del empleado
-      _long,              // long
-      _lat,               // lat
-      message,            // message
-      project_id,         // project_id
-      actividad_id,       // actividad_id
-      next_action,        // next_action
-      observation,        // observaciones
-      !quality,           // no_calidad
-      isCheckout,         // checkout
-      false,              // cambio
-      progress || 0       // avance
-    ];
-    console.log('[attendanceManual] Atributos y valores:', args);
-    const result = await rpcExecuteKw(
-      DB,
-      uid,
-      pass,
-      "hr.employee",
-      "attendance_manual",
-      args
-    );
-    console.log('[attendanceManual] Respuesta del backend:', result);
-    return result;
+    // Llamar al endpoint dedicado en el backend para registrar asistencia manual
+    const response = await fetch("http://localhost:3001/odoo/attendance_manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        db: DB,
+        uid,
+        password: pass,
+        project_id,
+        actividad_id,
+        next_action,
+        observation,
+        quality,
+        progress,
+        long,
+        lat
+      })
+    });
+    if (!response.ok) throw new Error("Error en backend attendance_manual: " + response.statusText);
+    const data = await response.json();
+    return data.result;
   } catch (error) {
     console.error('[attendanceManual] Error al crear entrada:', error);
     throw error;
