@@ -1,8 +1,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getPedirAvance } from '../../../db/odooApi';
-import { DB, RPC_URL } from "../otros/config";
-import { rpcCall } from "../otros/rpc";
+import { DB } from "../otros/config";
 
 // Custom hook para pedir avance
 export function usePedirAvanceMsg(uid: number, pass: string) {
@@ -39,15 +38,16 @@ export function useUserName(uid: number, pass: string) {
   useEffect(() => {
     async function fetchUserName() {
       try {
-        const recs: any[] = await rpcCall(
-          "object",
-          "execute_kw",
-          [DB, uid, pass, "res.users", "read", [uid], { fields: ["name"] }],
-          RPC_URL
-        );
-        if (recs && recs[0] && recs[0].name) {
-          setUserName(recs[0].name);
-          setUserInitial(recs[0].name.charAt(0).toUpperCase());
+        const response = await fetch("http://localhost:3001/odoo/get_user_name", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ db: DB, uid, password: pass })
+        });
+        if (!response.ok) throw new Error("Error en backend get_user_name: " + response.statusText);
+        const data = await response.json();
+        if (data && data.userName) {
+          setUserName(data.userName);
+          setUserInitial(data.userInitial);
         } else {
           setUserName("Usuario");
           setUserInitial("U");

@@ -12,18 +12,18 @@ import {
 } from "react-native";
 import useThemeColors from "../../../hooks/useThemeColors";
 import { showMessage } from "./util";
-async function rpcExecuteKw(db: string, uid: number, password: string, model: string, method: string, args: any[]) {
-  const body = { db, uid, password, model, method, args };
-  const url = "http://localhost:3001/odoo/execute_kw";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
-  const data = await response.json();
-  return data.result;
-}
+// async function rpcExecuteKw(db: string, uid: number, password: string, model: string, method: string, args: any[]) {
+//   const body = { db, uid, password, model, method, args };
+//   const url = "http://localhost:3001/odoo/execute_kw";
+//   const response = await fetch(url, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify(body)
+//   });
+//   if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
+//   const data = await response.json();
+//   return data.result;
+// }
 const DB = "registro";
 // Proxy para llamadas a Odoo (autenticación)
 async function rpcCallBackend(db: string, user: string, password: string) {
