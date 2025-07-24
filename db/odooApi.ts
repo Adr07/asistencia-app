@@ -29,18 +29,7 @@ async function rpcExecuteKw(db: string, uid: number, password: string, model: st
 // current
 
 // Llama al método get_pedir_avance en el backend para saber si se debe pedir avance
-export async function getPedirAvance({ uid, pass }: { uid: number; pass: string }) {
-  // Buscar el id de empleado usando el uid
-  const empleados = await rpcCall(
-    "object",
-    "execute_kw",
-    [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
-    RPC_URL
-  );
-  if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
-    throw new Error('Empleado no encontrado para uid: ' + uid);
-  }
-}
+// (Implementación eliminada por duplicidad)
 
 /**
  * Llama al método get_pedir_avance en el backend para saber si se debe pedir avance
