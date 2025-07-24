@@ -58,15 +58,9 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   const handleCheckIn = async () => {
     try {
       setLoading(true);
-      // Capturar ubicación antes del check-in
-      const currentLocation = await getCurrentLocation();
-      if (!currentLocation) {
-        const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
-        showMessage("Ubicación requerida", errorMessage);
-        setLoading(false);
-        return;
-      }
-      setCheckInLocation(currentLocation);
+      // Permitir check-in sin pedir ubicación, lat/lon en 0
+      const fakeLocation = { latitude: 0, longitude: 0 };
+      setCheckInLocation(fakeLocation as any);
       await handleCheck({
         action: 'sign_in',
         uid: props.uid,
@@ -76,7 +70,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         observaciones,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
+        geo: { latitude: 0, longitude: 0 },
         setCheckInTime,
         setCheckInTimestamp,
         setCurrentTaskStartTimestamp,
@@ -87,11 +81,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       });
     } catch (error) {
       setLoading(false);
-      if (error instanceof Error && error.message.includes('ubicación')) {
-        showMessage("Ubicación requerida", error.message);
-      } else {
-        showMessage("Error al realizar check-in", error instanceof Error ? error.message : "Error desconocido");
-      }
+      showMessage("Error al realizar check-in", error instanceof Error ? error.message : "Error desconocido");
     }
   };
 
@@ -102,14 +92,9 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       if (!selectedProject || !selectedTask) {
         showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
       }
-      const currentLocation = await getCurrentLocation();
-      if (!currentLocation) {
-        const errorMessage = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
-        showMessage("Ubicación requerida", errorMessage);
-        setLoading(false);
-        return;
-      }
-      setCheckOutLocation(currentLocation);
+      // No pedir ubicación, lat/lon en 0
+      const fakeLocation = { latitude: 0, longitude: 0 };
+      setCheckOutLocation(fakeLocation as any);
       await handleCheck({
         action: 'sign_out',
         uid: props.uid,
@@ -120,7 +105,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         progress,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
+        geo: { latitude: 0, longitude: 0 },
         setCheckOutTime,
         setCurrentTaskStartTimestamp,
         setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),
@@ -137,11 +122,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
       setCheckOutLocation(null);
     } catch (error) {
       setLoading(false);
-      if (error instanceof Error && error.message.includes('ubicación')) {
-        showMessage("Ubicación requerida", error.message);
-      } else {
-        showMessage("Error al realizar check-out", error instanceof Error ? error.message : "Error desconocido");
-      }
+      showMessage("Error al realizar check-out", error instanceof Error ? error.message : "Error desconocido");
     }
   };
 

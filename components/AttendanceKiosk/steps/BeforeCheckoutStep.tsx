@@ -1,7 +1,9 @@
 import React, { useRef } from "react";
 import { Button, Text, TextInput, View } from "react-native";
+import { useColorScheme } from "../../../hooks/useColorScheme"; // o el path correcto
 import styles from "../AttendanceStyles";
 import { BeforeCheckoutStepProps } from "./AttendanceStepTypes";
+
 
 export function BeforeCheckoutStep({
   workedHours,
@@ -32,7 +34,8 @@ export function BeforeCheckoutStep({
 
   // Log para saber si el componente se está renderizando y el valor de observaciones
   console.log('[BeforeCheckoutStep] RENDER (cada render) observaciones:', observaciones);
-
+  const colorScheme = useColorScheme();
+  const textColor = colorScheme === "dark" ? "#fff" : "#222";
   // (Eliminado: Forzar el paso a before_checkout para depuración)
   // Log después de escribir en el campo (onChangeText ya lo tiene, pero lo dejamos explícito)
   return (
@@ -51,7 +54,7 @@ export function BeforeCheckoutStep({
         {/* Campo de avance antes de check-out */}
         {typeof avanceInput !== 'undefined' && typeof setAvanceInput === 'function' && (
           <View style={{ marginVertical: 5, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={[styles.message, { textAlign: 'center' }]}>Avance:</Text>
+            <Text style={[styles.message, { textAlign: 'center',  color: textColor }]}>Avance:</Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -62,6 +65,7 @@ export function BeforeCheckoutStep({
                 width: "100%",
                 fontSize: 16,
                 textAlign: 'left',
+                 color: textColor
               }}
               placeholder="Porcentaje de avance..."
               value={avanceInput}
@@ -73,7 +77,7 @@ export function BeforeCheckoutStep({
 
         {/* Campo de observaciones antes de check-out */}
         <View style={{ marginVertical: 5, width: '100%', alignItems: 'center'}}>
-          <Text style={[styles.message, { textAlign: 'center' }]}>Observaciones:</Text>
+          <Text style={[styles.message, { textAlign: 'center',  color: textColor }]}>Observaciones:</Text>
           <TextInput
             style={{
               borderWidth: 1,
@@ -86,6 +90,7 @@ export function BeforeCheckoutStep({
               minHeight: 80,
               textAlignVertical: 'top',
               textAlign: 'left',
+               color: textColor
             }}
             placeholder="Describe lo realizado en esta actividad..."
             value={observaciones}

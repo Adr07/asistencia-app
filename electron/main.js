@@ -20,32 +20,21 @@ const server = express();
 server.use(cors());
 server.use(express.json());
 
-// Endpoint para ejecutar métodos sobre modelos Odoo
-// server.post('/odoo/execute_kw', async (req, res) => {
-//   try {
-//     const xmlrpc = require('xmlrpc');
-//     const { db, uid, password, model, method, args } = req.body;
-//     if (!db || !uid || !password || !model || !method || !args) {
-//       return res.status(400).json({ error: 'Faltan parámetros requeridos' });
-//     }
-//     const odooXmlrpcUrl = 'https://registro.sinerkia-dev.com/xmlrpc/2/object';
-//     const client = xmlrpc.createSecureClient({ url: odooXmlrpcUrl });
-//     client.methodCall('execute_kw', [db, uid, password, model, method, ...args], function (error, value) {
-//       if (error) {
-//         console.error('❌ Error en execute_kw:', error);
-//         if (error.res && error.res.body) {
-//           console.error('🔎 Respuesta cruda Odoo:', error.res.body);
-//         }
-//         res.status(500).json({ error: error.message, raw: error.res && error.res.body ? error.res.body : undefined });
-//       } else {
-//         res.json({ result: value });
-//       }
-//     });
-//   } catch (err) {
-//     console.error('❌ Error en endpoint /odoo/execute_kw:', err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+server.post('/odoo/attendance_manual', async (req, res) => {
+  try {
+    const odooRes = await fetch('https://registro.sinerkia-dev.com/jsonrpc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const data = await odooRes.text();
+    res.status(odooRes.status).send(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Endpoint para obtener el nombre e inicial del usuario
 server.post('/odoo/get_user_name', async (req, res) => {
   try {
