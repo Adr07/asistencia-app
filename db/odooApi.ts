@@ -68,13 +68,22 @@ export async function getEmployeeAllProjects({ uid, pass }: { uid: number; pass:
     });
     if (!response.ok) throw new Error("Error en backend get_employee_all_project: " + response.statusText);
     const data = await response.json();
-    const result = data.result;
-    if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
-      return result.map((p: any) => ({
-        id: p.id,
-        value: p.name || p.value,
-        label: p.name || p.label || p.value
-      }));
+    let result = data.result;
+    // Filtrar proyecto interno (id=1 o nombre/label 'interno')
+    if (Array.isArray(result)) {
+      const normalize = (str: string) => (str || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, '');
+      result = result.filter((p: any) => {
+        const v = normalize(p.value || p.name || '');
+        const l = normalize(p.label || '');
+        return p.id !== 1 && v !== 'interno' && l !== 'interno';
+      });
+      if (result.length > 0 && !('value' in result[0])) {
+        return result.map((p: any) => ({
+          id: p.id,
+          value: p.name || p.value,
+          label: p.name || p.label || p.value
+        }));
+      }
     }
     return result || [];
   } catch (error) {
@@ -96,13 +105,30 @@ export async function getProjectActivities({ uid, pass, project_id }: { uid: num
     });
     if (!response.ok) throw new Error("Error en backend get_project_activities: " + response.statusText);
     const data = await response.json();
-    const result = data.result;
-    if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
-      return result.map((a: any) => ({
-        id: a.id,
-        value: a.descripcion,
-        label: a.descripcion
-      }));
+    let result = data.result;
+    // Filtrar la actividad general solo si hay más de una actividad
+    if (Array.isArray(result)) {
+      // Detecta actividades "general" o similares (ignora mayúsculas, espacios, tildes)
+      const normalize = (str: string) => (str || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, '');
+      const isGeneral = (a: any) => {
+        const desc = normalize(a.descripcion || a.label || a.value || '');
+        return desc === 'general' || desc === 'actividadgeneral';
+      };
+      // Si hay más de una actividad, excluye la general; si solo hay una, muéstrala
+      let filtered = result;
+      if (result.length > 1) {
+        filtered = result.filter((a: any) => !isGeneral(a));
+        // Si por algún motivo se filtran todas, muestra todas (nunca lista vacía)
+        if (filtered.length === 0) filtered = result;
+      }
+      if (filtered.length > 0 && !('value' in filtered[0])) {
+        return filtered.map((a: any) => ({
+          id: a.id,
+          value: a.descripcion,
+          label: a.descripcion
+        }));
+      }
+      return filtered || [];
     }
     return result || [];
   } catch (error) {
