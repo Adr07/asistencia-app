@@ -1,5 +1,5 @@
 // components/otros/utils.ts
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 export function showMessage(title: string, message?: string | object) {
   let text = title;
@@ -18,8 +18,8 @@ export function showMessage(title: string, message?: string | object) {
     }
   }
   if (Platform.OS === 'web') {
-    window.alert(text);
+    // Eliminado alert de entrada registrada
   } else {
-    Alert.alert(title, text.replace(title + '\n\n', ''));
+    // Eliminado alert de entrada registrada
   }
 }

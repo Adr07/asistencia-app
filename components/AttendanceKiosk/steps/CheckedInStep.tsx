@@ -13,7 +13,7 @@ export function CheckedInStep({
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center', padding: 16 }}>
-        <Text style={[styles.message, { textAlign: 'center', marginBottom: 16, color: colorScheme === 'dark' ? '#fff' : '#000' }]}>Entrada registrada a las {checkInTime}</Text>
+        {/* Mensaje de entrada registrada eliminado por solicitud del usuario */}
         <View style={[styles.centered, { marginBottom: 16, width: '100%', alignItems: 'center', justifyContent: 'center' }]}> 
           <Text style={styles.timerLabel}>Contador:</Text>
           <Text style={styles.timer}>{formatTimer(timer)}</Text>

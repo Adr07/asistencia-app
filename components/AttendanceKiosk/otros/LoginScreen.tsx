@@ -117,7 +117,7 @@ export function LoginScreen({ onLogin }: Props) {
         errorMsg += "\n" + err.stack;
       }
       showMessage("Error de conexión", errorMsg);
-      alert("[LoginScreen] Error al crear entrada:\n" + errorMsg);
+      // Eliminado alert de entrada registrada
     } finally {
       setLoading(false);
     }

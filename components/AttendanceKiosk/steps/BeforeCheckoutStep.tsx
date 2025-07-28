@@ -39,7 +39,7 @@ export function BeforeCheckoutStep({
 
   // Mostrar pedirAvanceMsg encima del campo observaciones, siempre, en formato Avance: "valor"
   return (
-    <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>
+    <View style={{ flex: 1, padding: 16 }}>
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
         <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
           <Text style={[styles.message, { textAlign: 'center', marginBottom: 16, color: textColor }]}>¿Registrar salida?</Text>
