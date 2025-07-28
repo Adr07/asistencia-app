@@ -1,9 +1,12 @@
+import { usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
+// ...existing code...
+// ...existing code...
 import React from "react";
 import { useLocation } from "../../hooks/useLocation";
 import { handleChangeTask } from '../../ts/handleChangeTask';
 import { useAvance } from "../../ts/useProgress";
 import { useStartChangingTask } from "./indexTs/attendanceHandlers";
-import { usePedirAvanceMsg, usePendingTaskState, useUserName } from "./indexTs/useAttendanceKioskLogic";
+
 import { RPC_URL } from "./otros/config";
 
 interface AttendanceKioskProps {
@@ -20,7 +23,6 @@ export function useAttendanceKioskLogic(
   props: AttendanceKioskProps,
   attendanceHooks: AttendanceHooks
 ) {
-  // Colores del tema
   // Obtiene el nombre e inicial del usuario desde Odoo
   const { userName, userInitial } = useUserName(props.uid, props.pass);
   // Estado temporal para cambio de tarea y setters protegidos
@@ -29,8 +31,7 @@ export function useAttendanceKioskLogic(
     setPendingProject: _setPendingProject,
     pendingTask,
     setPendingTask: _setPendingTask,
-    lastDescription,
-    lastProgress,
+    // ...existing code...
     lastProject,
     setLastProject,
     lastTask,
@@ -95,6 +96,24 @@ export function useAttendanceKioskLogic(
     }
   }, [checkLocationBeforeAction]);
 
+  // Estado para pedirAvanceMsg
+  const [pedirAvanceMsg, setPedirAvanceMsg] = React.useState<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    let mounted = true;
+    async function fetchPedirAvance() {
+      try {
+        const { getPedirAvance } = await import('../../db/odooApi');
+        const result = await getPedirAvance({ uid: props.uid, pass: props.pass });
+        if (mounted) setPedirAvanceMsg(result);
+      } catch (e) {
+        if (mounted) setPedirAvanceMsg(undefined);
+      }
+    }
+    fetchPedirAvance();
+    return () => { mounted = false; };
+  }, [props.uid, props.pass]);
+
   // Ref para mantener el valor más reciente de observaciones
   const observacionesRef = React.useRef(observaciones);
   React.useEffect(() => {
@@ -112,7 +131,7 @@ export function useAttendanceKioskLogic(
       console.log('[useAttendanceKioskLogic] POST handleCheckOutWithProgress observaciones:', obsToSend);
     }, 0);
     handleCheckOut(obsToSend, avance !== undefined ? avance : undefined);
-  }, [avance, handleCheckOut]);
+  }, [avance, handleCheckOut, observaciones]);
   const startChangingTask = useStartChangingTask({
     observaciones,
     avanceInput: avance !== undefined ? avance.toString() : "",
@@ -225,8 +244,7 @@ export function useAttendanceKioskLogic(
     handleChangeTaskFlow(pendingProject, pendingTask);
   }, [pendingProject, pendingTask, handleChangeTaskFlow]);
 
-  // Hook para pedir avance
-  const pedirAvanceMsg = usePedirAvanceMsg(props.uid, props.pass);
+  // ...existing code...
   return {
     userName,
     userInitial,
@@ -234,7 +252,6 @@ export function useAttendanceKioskLogic(
     setPendingProject,
     pendingTask,
     setPendingTask,
-    // lastDescription, setLastDescription, lastProgress, setLastProgress removed (migrated to observaciones/avance)
     lastProject,
     setLastProject,
     lastTask,

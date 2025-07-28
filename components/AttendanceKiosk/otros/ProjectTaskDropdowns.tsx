@@ -1,5 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { getEmployeeTiempoActividad } from '../../../db/odooApi';
+// import { getEmployeeTiempoActividad } from '../../../db/odooApi';
 import { useProjectTaskDropdownsLogic } from '../../../ts/useProjectTaskDropdownsLogic';
 import ProjectTaskDropdownsStyles from './ProjectTaskDropdownsStyles';
 
@@ -32,8 +34,82 @@ interface DropdownProps {
 }
 
 function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.label || item.value || item.name, keyExtractor = (item) => item.id.toString(), pedirAvanceMsg, uid, pass, currentTask, currentProject }: DropdownProps & { pedirAvanceMsg?: string, uid: number, pass: string, currentTask?: any, currentProject?: any }) {
+  // Estado para los tiempos de actividad por id de actividad
+  const [activityTimes, setActivityTimes] = useState<{ [actividadId: string]: number | null }>({});
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    async function fetchTimes() {
+      if (isOpen && data && data.length > 0 && currentProject && uid && pass) {
+        const emp_id = uid;
+        const timesObj: { [actividadId: string]: number | null } = {};
+        for (const actividad of data) {
+          try {
+            const tiempo = await getEmployeeTiempoActividad({
+              uid,
+              pass,
+              emp_id,
+              project_id: currentProject.id,
+              actividad_id: actividad.id
+            });
+            timesObj[actividad.id] = tiempo as number;
+          } catch {
+            timesObj[actividad.id] = null;
+          }
+        }
+        setActivityTimes(timesObj);
+      }
+      if (!isOpen) setActivityTimes({});
+    }
+    fetchTimes();
+  }, [isOpen, data, currentProject, uid, pass]);
+
+  // Log para depuración de activityTimes y selectedValue
+  useEffect(() => {
+    console.log('[Dropdown] activityTimes:', activityTimes);
+  }, [activityTimes]);
+  useEffect(() => {
+    console.log('[Dropdown] selectedValue:', selectedValue);
+  }, [selectedValue]);
+  useEffect(() => {
+    console.log('[Dropdown] currentProject:', currentProject);
+  }, [currentProject]);
+
+  // ...existing code...
+
+  // Cargar tiempos de actividad al abrir el dropdown de actividades
+  // useEffect(() => {
+  //   if (isOpen && data && data.length > 0 && currentProject && uid && pass) {
+  //     setLoadingTimes(true);
+  //     const emp_id = uid;
+  //     Promise.all(
+  //       data.map(async (actividad) => {
+  //         const tiempo = await getEmployeeTiempoActividad({
+  //           uid,
+  //           pass,
+  //           emp_id,
+  //           project_id: currentProject.id,
+  //           actividad_id: actividad.id
+  //         });
+  //         return { id: actividad.id, tiempo };
+  //       })
+  //     ).then((resultArr) => {
+  //       const timesObj: { [actividadId: string]: number | null } = {};
+  //       resultArr.forEach(({ id, tiempo }) => {
+  //         timesObj[id] = tiempo;
+  //       });
+  //       setActivityTimes(timesObj);
+  //       setLoadingTimes(false);
+  //     });
+  //   }
+  //   if (!isOpen) setActivityTimes({});
+  // }, [isOpen, data, currentProject, uid, pass]);
+
+  // Filtrar data por búsqueda
+  const filteredData = search.trim().length > 0
+    ? data.filter(item => renderItem(item).toLowerCase().includes(search.trim().toLowerCase()))
+    : data;
 
   // El valor seleccionado siempre viene de props.selectedValue
   const handleSelect = (item: any) => {
@@ -42,10 +118,15 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
     setSearch('');
   };
 
-  // Filtrar data por búsqueda
-  const filteredData = search.trim().length > 0
-    ? data.filter(item => renderItem(item).toLowerCase().includes(search.trim().toLowerCase()))
-    : data;
+  function formatTime(minutesOrSeconds: number | null): string {
+    if (minutesOrSeconds == null) return '';
+    let totalMinutes = minutesOrSeconds;
+    if (minutesOrSeconds > 10000) totalMinutes = Math.round(minutesOrSeconds / 60); // fallback si backend da segundos
+    const h = Math.floor(totalMinutes / 60);
+    const m = Math.floor(totalMinutes % 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
 
   // El valor seleccionado viene de selectedValue (prop)
   // Para deshabilitar la opción actual, recibimos currentTask/currentProject como prop
@@ -68,15 +149,19 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
             <Text style={ProjectTaskDropdownsStyles.loadingText}>Cargando...</Text>
           </View>
         ) : (
-          <Text style={[
-            ProjectTaskDropdownsStyles.dropdownButtonText,
-            !selectedValue && ProjectTaskDropdownsStyles.placeholderText
-          ]}>
-            {selectedValue ? renderItem(selectedValue) : placeholder}
-            {/* Mostrar el mensaje de avance al lado del nombre en el botón si hay selección */}
-            {selectedValue && pedirAvanceMsg && (
-              <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
-            )}
+          <Text style={[ProjectTaskDropdownsStyles.dropdownButtonText, !selectedValue && ProjectTaskDropdownsStyles.placeholderText]}>
+            {selectedValue ? (
+              <>
+                <Text>
+                  {renderItem(selectedValue)}
+                  {currentProject && selectedValue && activityTimes[selectedValue.id] != null && (
+                    <Text style={{ marginLeft: 8, color: '#888', fontSize: 13 }}>
+                      {' · ' + formatTime(activityTimes[selectedValue.id])}
+                    </Text>
+                  )}
+                </Text>
+              </>
+            ) : placeholder}
           </Text>
         )}
         <Text style={ProjectTaskDropdownsStyles.dropdownArrow}>{isOpen ? '▲' : '▼'}</Text>
@@ -113,31 +198,29 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
               data={filteredData}
               keyExtractor={keyExtractor}
               renderItem={({ item }) => {
-                // Solo deshabilitar la actividad actual, nunca el proyecto actual
                 let isCurrent = false;
                 if (typeof item.id !== 'undefined') {
-                  // Para actividades, deshabilitar la actual
                   if (typeof (currentTask?.id) !== 'undefined' && item.id === currentTask?.id) {
                     isCurrent = true;
                   }
                 }
                 const isSelected = selectedValue && keyExtractor(selectedValue) === keyExtractor(item);
+                const isActivityDropdown = !!currentProject;
                 return (
                   <TouchableOpacity
-                    style={[
-                      ProjectTaskDropdownsStyles.dropdownItem,
-                      isSelected && ProjectTaskDropdownsStyles.selectedDropdownItem,
-                      isCurrent && { opacity: 0.5 }
-                    ]}
+                    style={[ProjectTaskDropdownsStyles.dropdownItem, isSelected && ProjectTaskDropdownsStyles.selectedDropdownItem, isCurrent && { opacity: 0.5 }]}
                     onPress={() => !isCurrent && handleSelect(item)}
                     disabled={isCurrent}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={ProjectTaskDropdownsStyles.dropdownItemText}>{renderItem(item)}{isCurrent ? ' (actual)' : ''}</Text>
-                      {/* Mostrar el mensaje de avance global al lado de cada actividad */}
-                      {pedirAvanceMsg && (
-                        <Text style={{ marginLeft: 8, color: pedirAvanceMsg === 'no' ? '#888' : '#1976d2', fontSize: 13, fontStyle: pedirAvanceMsg === 'no' ? 'italic' : 'normal' }}>{pedirAvanceMsg}</Text>
-                      )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[ProjectTaskDropdownsStyles.dropdownItemText, isActivityDropdown ? { color: '#d32f2f', fontWeight: 'bold' } : null]}>
+                          {renderItem(item)}{isCurrent ? ' (actual)' : ''}
+                        </Text>
+                      </View>
+                      <Text style={{ color: '#d32f2f', fontSize: 13, minWidth: 40, textAlign: 'right' }}>
+                        {typeof activityTimes[item.id] !== 'undefined' ? activityTimes[item.id] : 0}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 );
@@ -224,9 +307,10 @@ export default function ProjectTaskDropdowns({
           placeholder="Selecciona un proyecto..."
           loading={loading}
           disabled={loading}
+          renderItem={(item) => item.label || item.value || item.name}
+          keyExtractor={(item) => item.id.toString()}
           uid={uid}
           pass={pass}
-          currentProject={currentProject}
         />
         {/* Cartel si no hay proyectos */}
         {!loading && proyectos.length === 0 && (

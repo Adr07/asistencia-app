@@ -1,4 +1,3 @@
-// Proxy para ejecutar métodos sobre modelos Odoo
 // components/otros/LoginScreen.tsx
 import React, { useEffect, useState } from "react";
 import {
@@ -11,32 +10,9 @@ import {
   View,
 } from "react-native";
 import useThemeColors from "../../../hooks/useThemeColors";
+import { DB, RPC_URL } from "./config";
+import { rpcCall } from "./rpc";
 import { showMessage } from "./util";
-// async function rpcExecuteKw(db: string, uid: number, password: string, model: string, method: string, args: any[]) {
-//   const body = { db, uid, password, model, method, args };
-//   const url = "http://localhost:3001/odoo/execute_kw";
-//   const response = await fetch(url, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify(body)
-//   });
-//   if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
-//   const data = await response.json();
-//   return data.result;
-// }
-const DB = "registro";
-// Proxy para llamadas a Odoo (autenticación)
-async function rpcCallBackend(db: string, user: string, password: string) {
-  const body = { db, user, password };
-  const url = "http://localhost:3001/odoo/authenticate";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) throw new Error("Error en backend proxy Odoo: " + response.statusText);
-  return await response.json();
-}
 
 type Props = {
   onLogin: (uid: number, isAdmin: boolean, pass: string) => void;
@@ -51,7 +27,7 @@ export function LoginScreen({ onLogin }: Props) {
   // Logging de diagnóstico al cargar el componente
   useEffect(() => {
     console.group('🏁 COMPONENTE LOGIN INICIADO');
-    console.log('🌐 URL configurada:', (window as any).ODOO_BACKEND_URL || "http://localhost:3001/odoo");
+    console.log('🌐 URL configurada:', RPC_URL);
     console.log('🗄️ Base de datos configurada:', DB);
     console.log('🌍 User Agent:', navigator.userAgent);
     console.log('📱 Plataforma detectada:', Platform.OS);
@@ -71,18 +47,22 @@ export function LoginScreen({ onLogin }: Props) {
       console.group('🔐 INTENTO DE LOGIN');
       console.log('👤 Usuario:', user);
       console.log('🔒 Contraseña:', '***' + pass.slice(-2)); // Mostrar solo últimos 2 caracteres
-      console.log('🌐 URL del servidor:', (window as any).ODOO_BACKEND_URL || "http://localhost:3001/odoo");
+      console.log('🌐 URL del servidor:', RPC_URL);
       console.log('🗄️ Base de datos:', DB);
       console.log('📅 Timestamp:', new Date().toISOString());
       console.groupEnd();
       
       console.log('🚀 Iniciando autenticación...');
       
-      const authRes = await rpcCallBackend(DB, user, pass);
-      const uid = authRes && authRes.uid;
+      const uid = await rpcCall<number>(
+        "common",
+        "authenticate",
+        [DB, user, pass, {}],
+        RPC_URL
+      );
       
-      if (!uid) {
-        console.log('❌ Autenticación fallida: UID nulo o cero');
+      if (!uid || typeof uid !== 'number' || uid <= 0) {
+        console.log('❌ Autenticación fallida: UID inválido');
         showMessage("Error", "Usuario o contraseña incorrectos");
         return;
       }
@@ -90,31 +70,39 @@ export function LoginScreen({ onLogin }: Props) {
       console.log('✅ Autenticación exitosa - UID:', uid);
       console.log('✅ Autenticación exitosa - UID:', uid);
       
-        // console.log('🔍 Verificando permisos de administrador...');
-        // const recs = await rpcExecuteKw(
-        //   DB,
-        //   uid,
-        //   pass,
-        //   "res.users",
-        //   "search_read",
-        //   [
-        //     [["id", "=", uid]],
-        //     { fields: ["groups_id"] }
-        //   ]
-        // );
-        // console.log('📋 Grupos del usuario:', recs[0]?.groups_id);
-        // const isAdmin = recs[0].groups_id.map((g: any) => g[0]).includes(1);
-        // console.group('✅ LOGIN COMPLETADO');
-        // console.log('👤 UID:', uid);
-        // console.log('🔧 Es administrador:', isAdmin);
-        // console.log('📋 Grupos:', recs[0]?.groups_id);
-        // console.groupEnd();
-        onLogin(uid, false, pass);
+      console.log('🔍 Verificando permisos de administrador...');
+      
+      const recs = await rpcCall<any[]>(
+        "object",
+        "execute_kw",
+        [
+          DB,
+          uid,
+          pass,
+          "res.users",
+          "search_read",
+          [[["id", "=", uid]]],
+          { fields: ["groups_id"] },
+        ],
+        RPC_URL
+      );
+      
+      console.log('📋 Grupos del usuario:', recs[0]?.groups_id);
+      
+      const isAdmin = recs[0].groups_id.map((g: any) => g[0]).includes(1);
+      
+      console.group('✅ LOGIN COMPLETADO');
+      console.log('👤 UID:', uid);
+      console.log('🔧 Es administrador:', isAdmin);
+      console.log('📋 Grupos:', recs[0]?.groups_id);
+      console.groupEnd();
+
+      onLogin(uid, isAdmin, pass);
     } catch (err: any) {
       console.group('❌ ERROR EN LOGIN');
       console.error('🚨 Error capturado:', err);
       console.log('📍 Datos de conexión en el momento del error:');
-      console.log('  - URL:', (window as any).ODOO_BACKEND_URL || "http://localhost:3001/odoo");
+      console.log('  - URL:', RPC_URL);
       console.log('  - DB:', DB);
       console.log('  - Usuario:', user);
       console.log('🔍 Tipo de error:', err?.constructor?.name);

@@ -1,4 +1,6 @@
-import { Button, ScrollView, Text, View } from "react-native";
+import { Button, ScrollView, Text, View, useColorScheme } from "react-native";
+
+import { Colors } from "../../../constants/Colors";
 import styles from "../AttendanceStyles";
 import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
 import { WelcomeStepProps } from "./AttendanceStepTypes";
@@ -20,13 +22,15 @@ export function WelcomeStep({
   // progressInput,
   // setProgressInput,
 }: WelcomeStepProps) {
+  const colorScheme = useColorScheme();
+  const colors = colorScheme === "dark" ? Colors.dark : Colors.light;
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
-        <Text style={[styles.welcome, { textAlign: 'center', marginBottom: 16 }]}>¡Bienvenido!</Text>
+        <Text style={{ textAlign: 'center', marginBottom: 16, color: '#fff', fontSize: 24, fontWeight: 'bold', width: '100%' }}>¡Bienvenido!</Text>
         <ProjectTaskDropdowns
           uid={uid}
           pass={pass}

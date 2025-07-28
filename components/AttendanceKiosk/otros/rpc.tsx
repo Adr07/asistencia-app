@@ -45,51 +45,30 @@ export async function rpcCall<T>(
 
     console.log('📦 Payload completo:', requestBody);
 
-    // USAR EL MISMO MÉTODO QUE FUNCIONA EN LOGIN AUTOMÁTICO
-    console.log('🔄 Usando método no-cors (igual que login automático exitoso)...');
-    
-    // Enviar la solicitud con no-cors
-    await fetch(rpcUrl, {
+    // Real request to backend
+    const response = await fetch(rpcUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      mode: 'no-cors',
       body: requestBody,
     });
-    
-    console.log('📡 Solicitud no-cors enviada exitosamente');
-    console.log('⚠️ NOTA: Simulando respuesta exitosa como en testConnection');
-    console.log('🎯 ASUMIENDO: Si llega aquí, el login probablemente funcionó');
-    
-    // Simular respuesta específica según el método llamado
-    let simulatedResult: any;
-    
-    if (method === 'authenticate') {
-      // Para autenticación, devolver el User ID
-      simulatedResult = 2; // User ID de dev3@sinerkia.com
-      console.log('🔐 Simulando autenticación exitosa - User ID:', simulatedResult);
-    } else if (method === 'execute_kw' && args.includes('search_read')) {
-      // Para search_read de grupos de usuario, devolver array con datos del usuario
-      simulatedResult = [{
-        id: 2,
-        groups_id: [1, 9] // IDs de grupos típicos (base.group_user, base.group_partner_manager)
-      }];
-      console.log('👥 Simulando datos de grupos de usuario:', simulatedResult);
-    } else {
-      // Para otros métodos, devolver respuesta genérica exitosa
-      simulatedResult = true;
-      console.log('✅ Simulando respuesta genérica exitosa:', simulatedResult);
-    }
-    
-    console.log('🎯 Resultado final simulado:', simulatedResult);
-    console.groupEnd();
-    return simulatedResult as T;
 
+    if (!response.ok) {
+      throw new Error(`Error en la solicitud RPC: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('📥 Respuesta JSON-RPC:', data);
+    console.groupEnd();
+
+    if (data.error) {
+      throw new Error(`Odoo RPC error: ${data.error.message || JSON.stringify(data.error)}`);
+    }
+    return data.result as T;
   } catch (error) {
     console.error('� Error completo:', error);
     console.groupEnd();
-    
     // Mejorar mensajes de error para CORS y conexión
     if (error instanceof Error) {
       if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
@@ -99,7 +78,6 @@ export async function rpcCall<T>(
                        '3. Configuración de CORS en el servidor');
       }
     }
-    
     throw error;
   }
 }

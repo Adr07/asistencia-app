@@ -4,7 +4,6 @@ import { useColorScheme } from "../../../hooks/useColorScheme"; // o el path cor
 import styles from "../AttendanceStyles";
 import { BeforeCheckoutStepProps } from "./AttendanceStepTypes";
 
-
 export function BeforeCheckoutStep({
   workedHours,
   onCheckOut,
@@ -16,13 +15,13 @@ export function BeforeCheckoutStep({
   setObservaciones,
   avanceInput,
   setAvanceInput,
+  pedirAvanceMsg,
 }: BeforeCheckoutStepProps) {
   // Ref para mantener el valor más reciente
   const observacionesRef = useRef("");
   // Siempre mantener el valor más reciente del input
   React.useEffect(() => {
     observacionesRef.current = observaciones;
-    console.log('[BeforeCheckoutStep] useEffect observaciones (valor en estado):', observaciones);
   }, [observaciones]);
 
   React.useEffect(() => {
@@ -32,12 +31,11 @@ export function BeforeCheckoutStep({
     };
   }, []);
 
-  // Log para saber si el componente se está renderizando y el valor de observaciones
-  console.log('[BeforeCheckoutStep] RENDER (cada render) observaciones:', observaciones);
+  // Log para saber si el componente se está renderizando y el valor de observaciones y pedirAvanceMsg
   const colorScheme = useColorScheme();
   const textColor = colorScheme === "dark" ? "#fff" : "#222";
-  // (Eliminado: Forzar el paso a before_checkout para depuración)
-  // Log después de escribir en el campo (onChangeText ya lo tiene, pero lo dejamos explícito)
+
+  // Mostrar pedirAvanceMsg encima del campo observaciones, siempre, en formato Avance: "valor"
   return (
     <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
@@ -74,6 +72,14 @@ export function BeforeCheckoutStep({
             />
           </View>
         )}
+
+        {/* Mostrar pedirAvanceMsg encima del campo observaciones en rojo, siempre, con formato Avance: "valor" */}
+        <View style={{ marginVertical: 5, width: '100%', alignItems: 'center' }}>
+          <Text style={{ textAlign: 'center', fontSize: 16, marginBottom: 4 }}>
+            <Text style={{ color: '#fff' }}>Avance:</Text>
+            <Text style={{ color: '#b71c1c' }}> {typeof pedirAvanceMsg !== 'undefined' && pedirAvanceMsg.trim() !== '' ? pedirAvanceMsg : 'ninguno'}</Text>
+          </Text>
+        </View>
 
         {/* Campo de observaciones antes de check-out */}
         <View style={{ marginVertical: 5, width: '100%', alignItems: 'center'}}>

@@ -21,7 +21,8 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
       try {
         const res = await getEmployeeAllProjects({ uid, pass });
         if (res && Array.isArray(res)) {
-          setProyectos(res);
+          // Filtrar proyecto interno (id 1)
+          setProyectos(res.filter((p) => p.id !== 1));
         }
       } catch (error) {
         showMessage('Error al cargar proyectos');
@@ -57,8 +58,16 @@ export function useProjectTaskDropdownsLogic(uid: number, pass: string, selected
 
   // Filtrar tareas para no mostrar la actual como opción
 
-  // Filtrar actividades para no mostrar la actual como opción
-  const availableActivities = actividades.filter(act => !currentTask || currentTask.id !== act.id);
+  // Filtrar actividades para no mostrar la actual ni la actividad general (última en la lista si hay más de una)
+  let filteredActivities = actividades.filter(act => !currentTask || currentTask.id !== act.id);
+  if (filteredActivities.length > 1) {
+    // Excluir la última actividad (actividad general)
+    filteredActivities = filteredActivities.slice(0, -1);
+  } else if (filteredActivities.length === 1 && actividades.length === 1) {
+    // Solo hay la actividad general, mostrar como que no hay actividades
+    filteredActivities = [];
+  }
+  const availableActivities = filteredActivities;
 
   return {
     proyectos,

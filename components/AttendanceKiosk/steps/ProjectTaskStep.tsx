@@ -1,3 +1,4 @@
+import React from "react";
 import { Button, ScrollView, Text, TextInput, View } from "react-native";
 import styles from "../AttendanceStyles";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
@@ -38,13 +39,27 @@ export function ProjectTaskStep({
   const projectListSetProject = mode === "changing_task" && safeSetPendingProject ? safeSetPendingProject : setSelectedProject;
   const projectListSetTask = mode === "changing_task" && safeSetPendingTask ? safeSetPendingTask : setSelectedTask;
 
+  // Log para depuración de props
+  React.useEffect(() => {
+    console.log('[ProjectTaskStep] selectedProject:', projectListSelectedProject);
+    console.log('[ProjectTaskStep] selectedTask:', projectListSelectedTask);
+    console.log('[ProjectTaskStep] currentProject:', currentProject);
+    console.log('[ProjectTaskStep] currentTask:', currentTask);
+  }, [projectListSelectedProject, projectListSelectedTask, currentProject, currentTask]);
+
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ width: '100%', maxWidth: 500, alignSelf: 'center' }}>
-        <Text style={[styles.welcome, { textAlign: 'center', marginBottom: 16 }]}> 
+        <Text
+          style={
+            mode === "welcome"
+              ? { ...styles.welcome, textAlign: 'center', marginBottom: 16, color: '#fff' }
+              : { ...styles.welcome, textAlign: 'center', marginBottom: 16, color: '#333' }
+          }
+        >
           {mode === "welcome" ? "¡Bienvenido!" : "Selecciona nueva tarea"}
         </Text>
         <ProjectTaskDropdowns
@@ -56,8 +71,8 @@ export function ProjectTaskStep({
           onSelectTask={projectListSetTask}
           hideTitle={mode === "changing_task"}
           pedirAvanceMsg={pedirAvanceMsg}
-          currentProject={currentProject}
-          currentTask={currentTask}
+          currentProject={mode === "changing_task" ? pendingProject : currentProject}
+          currentTask={mode === "changing_task" ? pendingTask : currentTask}
         />
 
         {/* Mostrar campo de avance solo si pedirAvanceMsg es válido y distinto de 'no' */}

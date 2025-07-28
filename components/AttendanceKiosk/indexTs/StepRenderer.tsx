@@ -1,9 +1,9 @@
 import * as React from "react";
 import {
-  BeforeCheckoutStep,
-  CheckedInStep,
-  CheckedOutStep,
-  ProjectTaskStep
+    BeforeCheckoutStep,
+    CheckedInStep,
+    CheckedOutStep,
+    ProjectTaskStep
 } from "../AttendanceSteps";
 
 /**
@@ -106,7 +106,7 @@ export function StepRenderer({
           setObservaciones={props.setObservaciones}
           avanceInput={props.avanceInput}
           setAvanceInput={props.setAvanceInput}
-          // progressInput and setProgressInput removed, use avanceInput and setAvanceInput only
+          pedirAvanceMsg={props.pedirAvanceMsg}
         />
       );
     case "changing_task":

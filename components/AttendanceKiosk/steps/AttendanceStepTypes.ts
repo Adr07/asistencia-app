@@ -31,6 +31,7 @@ export interface BeforeCheckoutStepProps {
   setObservaciones: (v: string) => void;
   avanceInput?: string;
   setAvanceInput?: (v: string) => void;
+  pedirAvanceMsg?: string;
 }
 
 export interface ProjectTaskStepProps {

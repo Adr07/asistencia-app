@@ -21,7 +21,7 @@ const attendanceStyles = StyleSheet.create({
     alignSelf: 'center',
   },
   avatarText: { color: "#fff", fontSize: 40, fontWeight: "bold" },
-  title: { fontSize: 24, fontWeight: "bold", textAlign: 'center', width: '100%' },
+  title: { fontSize: 24, fontWeight: "bold", textAlign: 'center', width: '100%', color: '#fff' },
   welcome: { fontSize: 24, fontWeight: "bold", textAlign: 'center', width: '100%', marginBottom: 10 },
   subtitle: { fontSize: 16, marginBottom: 20, textAlign: 'center', width: '100%' },
   message: { fontSize: 18, textAlign: "center", marginVertical: 10, width: '100%' },
