@@ -22,7 +22,7 @@ export interface CheckedInStepProps {
 
 export interface BeforeCheckoutStepProps {
   workedHours?: string;
-  onCheckOut: (observaciones: string) => void;
+  onCheckOut: (observaciones: string, quality?: boolean, progress?: number) => void;
   onChangeTask: () => void;
   loading?: boolean;
   timer: number;
@@ -42,10 +42,10 @@ export interface ProjectTaskStepProps {
   selectedTask: any;
   setSelectedProject: (p: any) => void;
   setSelectedTask: (t: any) => void;
-  onCheckIn?: (observaciones?: string) => void;
+  onCheckIn?: (observaciones?: string, geo?: { latitude?: number; longitude?: number } | null) => void;
   onLogout?: () => void;
   onCancel?: () => void;
-  onContinue?: () => void;
+  onContinue?: (geo?: { latitude?: number; longitude?: number } | null) => void;
   mode: 'welcome' | 'changing_task';
   continueButtonColor?: string;
   pendingProject?: any;

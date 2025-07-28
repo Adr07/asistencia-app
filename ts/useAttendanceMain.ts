@@ -58,9 +58,9 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   const handleCheckIn = async () => {
     try {
       setLoading(true);
-      // Permitir check-in sin pedir ubicación, lat/lon en 0
-      const fakeLocation = { latitude: 0, longitude: 0 };
-      setCheckInLocation(fakeLocation as any);
+      // Obtener ubicación real antes de check-in
+      const location = await getCurrentLocation();
+      setCheckInLocation(location as any);
       await handleCheck({
         action: 'sign_in',
         uid: props.uid,
@@ -70,7 +70,7 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         observaciones,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: 0, longitude: 0 },
+        geo: location,
         setCheckInTime,
         setCheckInTimestamp,
         setCurrentTaskStartTimestamp,
@@ -86,15 +86,15 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
   };
 
   // Función adaptadora para manejar check-out (salida)
-  const handleCheckOut = async (customObservaciones?: string, progress?: number) => {
+  const handleCheckOut = async (customObservaciones?: string, quality?: boolean, progress?: number) => {
     try {
       setLoading(true);
       if (!selectedProject || !selectedTask) {
         showMessage("No se seleccionó proyecto o tarea. Solo se cerrará el registro de asistencia.", "warning");
       }
-      // No pedir ubicación, lat/lon en 0
-      const fakeLocation = { latitude: 0, longitude: 0 };
-      setCheckOutLocation(fakeLocation as any);
+      // Obtener ubicación real antes de check-out
+      const location = await getCurrentLocation();
+      setCheckOutLocation(location as any);
       await handleCheck({
         action: 'sign_out',
         uid: props.uid,
@@ -102,10 +102,11 @@ export function useAttendanceMain(props: { uid: number; pass: string; onLogout?:
         selectedProject,
         selectedTask,
         observaciones: typeof customObservaciones === 'string' ? customObservaciones : observaciones,
+        quality,
         progress,
         checkInTimestamp,
         currentTaskStartTimestamp,
-        geo: { latitude: 0, longitude: 0 },
+        geo: location,
         setCheckOutTime,
         setCurrentTaskStartTimestamp,
         setStep: (v: string) => setStep(v as "welcome" | "checked_in" | "before_checkout" | "checked_out" | "changing_task"),

@@ -24,13 +24,13 @@ export async function rpcCall<T>(
     const callerInfo = stack?.split('\n')[2]?.trim() || 'Desconocido';
     
     console.group('🚀 [rpcCall] NUEVA LLAMADA RPC');
-    console.log('📞 Llamado desde:', callerInfo);
-    console.log('📁 Stack trace completo:', stack);
-    console.log('🌐 URL destino:', rpcUrl);
-    console.log('🔧 Service:', service);
-    console.log('⚙️ Method:', method);
-    console.log('📝 Args:', args);
-    console.log('🕐 Timestamp:', new Date().toISOString());
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
     
     const requestBody = JSON.stringify({
       jsonrpc: '2.0',
@@ -43,7 +43,7 @@ export async function rpcCall<T>(
       id: Math.floor(Math.random() * 100000),
     });
 
-    console.log('📦 Payload completo:', requestBody);
+    // ...existing code...
 
     // Real request to backend
     const response = await fetch(rpcUrl, {
@@ -59,7 +59,7 @@ export async function rpcCall<T>(
     }
 
     const data = await response.json();
-    console.log('📥 Respuesta JSON-RPC:', data);
+    // ...existing code...
     console.groupEnd();
 
     if (data.error) {

@@ -1,4 +1,4 @@
-import { Button, Text, View } from "react-native";
+import { Button, Text, View, useColorScheme } from "react-native";
 import styles from "../AttendanceStyles";
 import { CheckedInStepProps } from "./AttendanceStepTypes";
 
@@ -9,10 +9,11 @@ export function CheckedInStep({
   formatTimer,
   loading,
 }: CheckedInStepProps) {
+  const colorScheme = useColorScheme();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center', padding: 16 }}>
-        <Text style={[styles.message, { textAlign: 'center', marginBottom: 16 }]}>Entrada registrada a las {checkInTime}</Text>
+        <Text style={[styles.message, { textAlign: 'center', marginBottom: 16, color: colorScheme === 'dark' ? '#fff' : '#000' }]}>Entrada registrada a las {checkInTime}</Text>
         <View style={[styles.centered, { marginBottom: 16, width: '100%', alignItems: 'center', justifyContent: 'center' }]}> 
           <Text style={styles.timerLabel}>Contador:</Text>
           <Text style={styles.timer}>{formatTimer(timer)}</Text>

@@ -67,13 +67,13 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
 
   // Log para depuración de activityTimes y selectedValue
   useEffect(() => {
-    console.log('[Dropdown] activityTimes:', activityTimes);
+    // ...existing code...
   }, [activityTimes]);
   useEffect(() => {
-    console.log('[Dropdown] selectedValue:', selectedValue);
+    // ...existing code...
   }, [selectedValue]);
   useEffect(() => {
-    console.log('[Dropdown] currentProject:', currentProject);
+    // ...existing code...
   }, [currentProject]);
 
   // ...existing code...
@@ -256,10 +256,10 @@ export default function ProjectTaskDropdowns({
 
   // Mostrar en consola los proyectos y actividades cada vez que cambian
   React.useEffect(() => {
-    console.log('Proyectos:', proyectos);
+    // ...existing code...
   }, [proyectos]);
   React.useEffect(() => {
-    console.log('Actividades disponibles:', availableActivities);
+    // ...existing code...
   }, [availableActivities]);
 
   const handleProjectChange = useCallback((project: any) => {

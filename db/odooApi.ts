@@ -151,7 +151,7 @@ export async function getProjectActivities({ uid, pass, project_id }: { uid: num
     const emp_id = empleados[0].id;
     
     // Llamar al backend para obtener actividades del proyecto
-    console.log('[getProjectActivities] Llamando backend con:', { emp_id, project_id });
+    // ...existing code...
     const result: any = await rpcCall(
       "object",
       "execute_kw",
@@ -159,7 +159,7 @@ export async function getProjectActivities({ uid, pass, project_id }: { uid: num
       RPC_URL
     );
     
-    console.log('[getProjectActivities] Respuesta del backend:', result);
+    // ...existing code...
     
     // Formatear respuesta para consistencia
     if (Array.isArray(result) && result.length > 0 && !('value' in result[0])) {
@@ -209,16 +209,12 @@ export async function attendanceManual({
     const message = "";
 
     // Buscar el registro de hr.employee correspondiente al usuario
-    console.log('[attendanceManual] Buscando registro de hr.employee para uid:', uid);
-    
     const empleados: number[] = await rpcCall(
       "object",
       "execute_kw",
       [DB, uid, pass, "hr.employee", "search", [[['user_id', '=', uid]]]],
       RPC_URL
     );
-    
-    console.log('[attendanceManual] Resultado de la búsqueda de hr.employee:', empleados);
 
     if (!empleados || empleados.length === 0) {
       const errorMsg = `No se encontró un registro de hr.employee para el usuario con uid: ${uid}`;
@@ -227,12 +223,7 @@ export async function attendanceManual({
     }
 
     const emp_id = empleados[0];
-    console.log('[attendanceManual] ID de empleado encontrado:', emp_id);
-
-    // Determinar si es un check-out
     const isCheckout = ['check_out', 'checkout', 'salida'].includes(next_action);
-
-    // Preparar argumentos en el orden correcto según la implementación Python
     const args = [
       [emp_id],           // array de IDs
       emp_id,             // El id del empleado
@@ -249,7 +240,21 @@ export async function attendanceManual({
       progress || 0       // avance
     ];
 
-    console.log('[attendanceManual] Atributos y valores:', args);
+    // LOG de todos los datos enviados al backend
+    console.log('[attendanceManual] Datos enviados al backend:', {
+      uid,
+      pass,
+      project_id,
+      actividad_id,
+      next_action,
+      observation,
+      quality,
+      progress,
+      long: _long,
+      lat: _lat,
+      emp_id,
+      args
+    });
 
     const result = await rpcCall(
       "object",
@@ -257,8 +262,6 @@ export async function attendanceManual({
       [DB, uid, pass, "hr.employee", "attendance_manual", args],
       RPC_URL
     );
-
-    console.log('[attendanceManual] Respuesta del backend:', result);
     return result;
   } catch (error) {
     console.error('[attendanceManual] Error al crear entrada:', error);

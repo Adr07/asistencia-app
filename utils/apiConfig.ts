@@ -9,14 +9,14 @@
  * Configurar la API para uso directo con TypeScript
  */
 export function configureApiMode() {
-  console.log('[Config] Usando API TypeScript directa (sin bridge)');
+  // ...existing code...
 }
 
 /**
  * Verificar estado de la API
  */
 export async function logCurrentApiMode() {
-  console.log('[Config] API actual: TypeScript (conexión directa)');
+  // ...existing code...
 }
 
 /**
@@ -24,6 +24,6 @@ export async function logCurrentApiMode() {
  */
 export function initializeApiConfig() {
   configureApiMode();
-  console.log('[Config] API inicializada - modo TypeScript directo');
+  // ...existing code...
 }
 

@@ -3,6 +3,7 @@ import { Button, ScrollView, Text, TextInput, View } from "react-native";
 import styles from "../AttendanceStyles";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
 
+import { getLocationWeb } from '../../../utils/getLocationWeb';
 import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
 
 export function ProjectTaskStep({
@@ -31,6 +32,30 @@ export function ProjectTaskStep({
   currentProject,
   currentTask,
 }: ProjectTaskStepProps) {
+  // Estado para la geolocalización
+  const [location, setLocation] = React.useState<{ latitude?: number; longitude?: number } | null>(null);
+  // Obtener localización web/electron y mostrar en log al principio del flujo
+  React.useEffect(() => {
+    getLocationWeb().then((loc) => {
+      if (loc) {
+        setLocation(loc);
+        console.log('[ProjectTaskStep] Localización obtenida:', loc);
+      } else {
+        setLocation(null);
+        console.log('[ProjectTaskStep] No se pudo obtener la localización');
+      }
+    });
+  }, []);
+  // Obtener localización web/electron y mostrar en log al principio del flujo
+  React.useEffect(() => {
+    getLocationWeb().then((location) => {
+      if (location) {
+        console.log('[ProjectTaskStep] Localización obtenida:', location);
+      } else {
+        console.log('[ProjectTaskStep] No se pudo obtener la localización');
+      }
+    });
+  }, []);
   // Eliminado: log de observaciones innecesario y campo opcional
 
   // En modo changing_task, usar los pending y los setters safe
@@ -41,10 +66,6 @@ export function ProjectTaskStep({
 
   // Log para depuración de props
   React.useEffect(() => {
-    console.log('[ProjectTaskStep] selectedProject:', projectListSelectedProject);
-    console.log('[ProjectTaskStep] selectedTask:', projectListSelectedTask);
-    console.log('[ProjectTaskStep] currentProject:', currentProject);
-    console.log('[ProjectTaskStep] currentTask:', currentTask);
   }, [projectListSelectedProject, projectListSelectedTask, currentProject, currentTask]);
 
   return (
@@ -62,6 +83,7 @@ export function ProjectTaskStep({
         >
           {mode === "welcome" ? "¡Bienvenido!" : "Selecciona nueva tarea"}
         </Text>
+        {/* Geolocalización eliminada de la pantalla */}
         <ProjectTaskDropdowns
           uid={uid}
           pass={pass}
@@ -120,7 +142,7 @@ export function ProjectTaskStep({
                   title="Entrada"
                   color="#b71c1c"
                   onPress={() => {
-                    if (onCheckIn) onCheckIn(observaciones || "");
+                    if (onCheckIn) onCheckIn(observaciones || "", location);
                   }}
                   disabled={loading || !selectedProject || !selectedTask}
                 />
@@ -140,7 +162,9 @@ export function ProjectTaskStep({
                 <Button
                   title="Continuar"
                   color="#b71c1c"
-                  onPress={onContinue}
+                  onPress={() => {
+                    if (onContinue) onContinue(location);
+                  }}
                   disabled={loading || !selectedProject || !selectedTask}
                 />
               </View>

@@ -126,11 +126,13 @@ export function useAttendanceKioskLogic(
     const obsToSend = typeof obsFromInput === 'string'
       ? obsFromInput
       : (typeof observacionesRef.current === 'string' ? observacionesRef.current : observaciones);
-    console.log('[useAttendanceKioskLogic] handleCheckOutWithProgress observaciones:', obsToSend, 'avance:', avance);
+    // ...existing code...
     setTimeout(() => {
-      console.log('[useAttendanceKioskLogic] POST handleCheckOutWithProgress observaciones:', obsToSend);
+      // ...existing code...
     }, 0);
-    handleCheckOut(obsToSend, avance !== undefined ? avance : undefined);
+    // El wrapper debe pasar calidad y avance (progress) en el orden correcto
+    // Suponiendo calidad siempre true por defecto aquí, pero puede ser gestionado por el estado si se requiere
+    handleCheckOut(obsToSend, true, avance !== undefined ? avance : undefined);
   }, [avance, handleCheckOut, observaciones]);
   const startChangingTask = useStartChangingTask({
     observaciones,

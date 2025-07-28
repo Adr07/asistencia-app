@@ -1,13 +1,12 @@
 // components/otros/LoginScreen.tsx
 import React, { useEffect, useState } from "react";
 import {
-  Button,
-  Image,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    Button,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from "react-native";
 import useThemeColors from "../../../hooks/useThemeColors";
 import { DB, RPC_URL } from "./config";
@@ -27,10 +26,10 @@ export function LoginScreen({ onLogin }: Props) {
   // Logging de diagnóstico al cargar el componente
   useEffect(() => {
     console.group('🏁 COMPONENTE LOGIN INICIADO');
-    console.log('🌐 URL configurada:', RPC_URL);
-    console.log('🗄️ Base de datos configurada:', DB);
-    console.log('🌍 User Agent:', navigator.userAgent);
-    console.log('📱 Plataforma detectada:', Platform.OS);
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
+    // ...existing code...
     console.groupEnd();
   }, []);
 
@@ -45,14 +44,14 @@ export function LoginScreen({ onLogin }: Props) {
       
       // Logging detallado de datos de conexión
       console.group('🔐 INTENTO DE LOGIN');
-      console.log('👤 Usuario:', user);
-      console.log('🔒 Contraseña:', '***' + pass.slice(-2)); // Mostrar solo últimos 2 caracteres
-      console.log('🌐 URL del servidor:', RPC_URL);
-      console.log('🗄️ Base de datos:', DB);
-      console.log('📅 Timestamp:', new Date().toISOString());
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
       console.groupEnd();
       
-      console.log('🚀 Iniciando autenticación...');
+      // ...existing code...
       
       const uid = await rpcCall<number>(
         "common",
@@ -62,15 +61,15 @@ export function LoginScreen({ onLogin }: Props) {
       );
       
       if (!uid || typeof uid !== 'number' || uid <= 0) {
-        console.log('❌ Autenticación fallida: UID inválido');
+        // ...existing code...
         showMessage("Error", "Usuario o contraseña incorrectos");
         return;
       }
       
-      console.log('✅ Autenticación exitosa - UID:', uid);
-      console.log('✅ Autenticación exitosa - UID:', uid);
+      // ...existing code...
+      // ...existing code...
       
-      console.log('🔍 Verificando permisos de administrador...');
+      // ...existing code...
       
       const recs = await rpcCall<any[]>(
         "object",
@@ -87,28 +86,28 @@ export function LoginScreen({ onLogin }: Props) {
         RPC_URL
       );
       
-      console.log('📋 Grupos del usuario:', recs[0]?.groups_id);
+      // ...existing code...
       
       const isAdmin = recs[0].groups_id.map((g: any) => g[0]).includes(1);
       
       console.group('✅ LOGIN COMPLETADO');
-      console.log('👤 UID:', uid);
-      console.log('🔧 Es administrador:', isAdmin);
-      console.log('📋 Grupos:', recs[0]?.groups_id);
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
       console.groupEnd();
 
       onLogin(uid, isAdmin, pass);
     } catch (err: any) {
       console.group('❌ ERROR EN LOGIN');
       console.error('🚨 Error capturado:', err);
-      console.log('📍 Datos de conexión en el momento del error:');
-      console.log('  - URL:', RPC_URL);
-      console.log('  - DB:', DB);
-      console.log('  - Usuario:', user);
-      console.log('🔍 Tipo de error:', err?.constructor?.name);
-      console.log('📝 Mensaje de error:', err?.message);
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
+      // ...existing code...
       if (err?.stack) {
-        console.log('📊 Stack trace:', err.stack);
+        // ...existing code...
       }
       console.groupEnd();
       

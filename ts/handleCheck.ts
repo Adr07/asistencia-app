@@ -1,8 +1,8 @@
  import { showMessage as defaultShowMessage } from "../components/AttendanceKiosk/otros/util";
 import { attendanceManual } from "../db/odooApi";
 import {
-  calcDiffHours,
-  getNowLocalTimeString
+    calcDiffHours,
+    getNowLocalTimeString
 } from "../utils/attendanceUtils";
 
 /**
@@ -34,6 +34,7 @@ export async function handleCheck({
   setSelectedProject,
   setSelectedTask, 
   progress, 
+  quality,
 }: {
   action: "sign_in" | "sign_out";
   uid: number;
@@ -57,14 +58,15 @@ export async function handleCheck({
   setSelectedProject?: (v: any) => void;
   setSelectedTask?: (v: any) => void;
   progress?: number;
+  quality?: boolean;
 }) {
   setLoading(true);
-  console.log('[handleCheck] INICIO', { action, observaciones, progress, setObservacionesType: typeof setObservaciones });
+  // ...existing code...
   try {
     // El id de empleado y el control de check-in/check-out lo maneja attendanceManual en el backend
     if (action === "sign_in") {
-      console.log('[handleCheck] Acción: sign_in');
-      console.log('[handleCheck] ANTES DE ENVIAR AL BACKEND (sign_in) observaciones:', observaciones);
+      // ...existing code...
+      // ...existing code...
       await attendanceManual({
         uid,
         pass,
@@ -72,7 +74,7 @@ export async function handleCheck({
         actividad_id: selectedTask?.id,
         next_action: "check_in",
         observation: observaciones || "",
-        quality: true, // O ajusta según lógica de calidad
+        quality: typeof quality === 'boolean' ? quality : true,
         progress,
         long: geo?.longitude ?? 0,
         lat: geo?.latitude ?? 0,
@@ -83,12 +85,12 @@ export async function handleCheck({
       setCheckInTimestamp?.(now);
       setCurrentTaskStartTimestamp?.(now); // Establecer inicio de tarea actual
       setStep?.("checked_in");
-      console.log('[handleCheck] setObservaciones (sign_in):', setObservaciones, typeof setObservaciones, 'valor observaciones:', observaciones);
+      // ...existing code...
       if (typeof setObservaciones === 'function') {
         // setObservaciones(""); // Ya no se limpia aquí
-        console.log('[handleCheck] setObservaciones llamada correctamente (sign_in), valor actual:', observaciones);
+        // ...existing code...
       } else {
-        console.log('[handleCheck] setObservaciones NO es función (sign_in)');
+        // ...existing code...
       }
       setSelectedProject?.(null);
       setSelectedTask?.(null);
@@ -97,8 +99,8 @@ export async function handleCheck({
         "Tu entrada ha sido registrada correctamente."
       );
     } else {
-      console.log('[handleCheck] Acción: sign_out');
-      console.log('[handleCheck] ANTES DE ENVIAR AL BACKEND (sign_out) observaciones:', observaciones);
+      // ...existing code...
+      // ...existing code...
       await attendanceManual({
         uid,
         pass,
@@ -106,7 +108,7 @@ export async function handleCheck({
         actividad_id: selectedTask?.id,
         next_action: "check_out",
         observation: observaciones || "",
-        quality: true, // O ajusta según lógica de calidad
+        quality: typeof quality === 'boolean' ? quality : true,
         progress,
         long: geo?.longitude ?? 0,
         lat: geo?.latitude ?? 0,
@@ -124,12 +126,12 @@ export async function handleCheck({
       setStep?.("checked_out");
       setWorkedHours?.(diffHours.toFixed(2));
       setFullTime?.(fullTimeStr);
-      console.log('[handleCheck] setObservaciones (sign_out):', setObservaciones, typeof setObservaciones, 'valor observaciones:', observaciones);
+      // ...existing code...
       if (typeof setObservaciones === 'function') {
         // setObservaciones(""); // Ya no se limpia aquí
-        console.log('[handleCheck] setObservaciones llamada correctamente (sign_out), valor actual:', observaciones);
+        // ...existing code...
       } else {
-        console.log('[handleCheck] setObservaciones NO es función (sign_out)');
+        // ...existing code...
       }
       setSelectedProject?.(null);
       setSelectedTask?.(null);
@@ -140,13 +142,13 @@ export async function handleCheck({
     }
   } catch (e: any) {
     // Muestra error si algo falla en el proceso
-    console.log('[handleCheck] ERROR', e);
+    // ...existing code...
     (showMessage || defaultShowMessage)(
       "Error de conexión",
       e?.stack || JSON.stringify(e) || e?.message || String(e)
     );
   } finally {
     setLoading(false); // Finaliza el estado de carga
-    console.log('[handleCheck] FIN', { action });
+    // ...existing code...
   }
 }
