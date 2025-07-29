@@ -9,9 +9,9 @@ import {
     View
 } from "react-native";
 import useThemeColors from "../../../hooks/useThemeColors";
+import { LoginErrorModal } from '../../LoginErrorModal';
 import { DB, RPC_URL } from "./config";
 import { rpcCall } from "./rpc";
-import { showMessage } from "./util";
 
 type Props = {
   onLogin: (uid: number, isAdmin: boolean, pass: string) => void;
@@ -22,6 +22,8 @@ export function LoginScreen({ onLogin }: Props) {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Logging de diagnóstico al cargar el componente
   useEffect(() => {
@@ -35,7 +37,8 @@ export function LoginScreen({ onLogin }: Props) {
 
   const handleLogin = async () => {
     if (!user || !pass) {
-      showMessage("Error", "Completa todos los campos");
+      setErrorMessage("Completa todos los campos");
+      setErrorModalVisible(true);
       return;
     }
     
@@ -61,8 +64,8 @@ export function LoginScreen({ onLogin }: Props) {
       );
       
       if (!uid || typeof uid !== 'number' || uid <= 0) {
-        // ...existing code...
-        showMessage("Error", "Usuario o contraseña incorrectos");
+        setErrorMessage("Usuario o contraseña incorrectos");
+        setErrorModalVisible(true);
         return;
       }
       
@@ -116,7 +119,8 @@ export function LoginScreen({ onLogin }: Props) {
       if (err && err.stack) {
         errorMsg += "\n" + err.stack;
       }
-      showMessage("Error de conexión", errorMsg);
+      setErrorMessage(errorMsg);
+      setErrorModalVisible(true);
       // Eliminado alert de entrada registrada
     } finally {
       setLoading(false);
@@ -124,7 +128,13 @@ export function LoginScreen({ onLogin }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+    <>
+      <LoginErrorModal
+        visible={errorModalVisible}
+        message={errorMessage}
+        onClose={() => setErrorModalVisible(false)}
+      />
+      <View style={[styles.container, { backgroundColor: colors.background }]}> 
       <Image
         source={require("../../../assets/images/0bc530f3-4ccd-4a3f-b8ba-f85b8990b0aa_removalai_preview.png")}
         style={styles.logo}
@@ -172,7 +182,8 @@ export function LoginScreen({ onLogin }: Props) {
           disabled={loading}
         />
       </View>
-    </View>
+      </View>
+    </>
   );
 }
 

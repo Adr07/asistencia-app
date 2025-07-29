@@ -1,8 +1,37 @@
+// Obtener bolsa de horas y horas remanentes del empleado
 // Obtener el tiempo de actividad de un empleado en una actividad específica
 // API central para interactuar con Odoo optimizada con lógica de Python
 // Este archivo implementa las funciones usando la lógica mejorada del archivo Python
 import { DB, RPC_URL } from "../components/AttendanceKiosk/otros/config";
 import { rpcCall } from "../components/AttendanceKiosk/otros/rpc";
+export async function getEmployeeInfo({ uid, pass }: { uid: number; pass: string }) {
+  // Buscar el id de empleado usando el uid
+  const empleados = await rpcCall(
+    "object",
+    "execute_kw",
+    [DB, uid, pass, "hr.employee", "search_read", [[['user_id', '=', uid]]], { fields: ['id'], limit: 1 }],
+    RPC_URL
+  );
+  if (!empleados || !Array.isArray(empleados) || empleados.length === 0) {
+    throw new Error('Empleado no encontrado para uid: ' + uid);
+  }
+  const emp_id = empleados[0].id;
+
+  // Llamar al backend para obtener bolsa_horas_numero y remaining_leaves
+  const result = await rpcCall(
+    "object",
+    "execute_kw",
+    [DB, uid, pass, "hr.employee", "search_read", [[['id', '=', emp_id]]], { fields: ['bolsa_horas_numero', 'remaining_leaves'], limit: 1 }],
+    RPC_URL
+  );
+  if (Array.isArray(result) && result.length > 0) {
+    return {
+      bolsa_horas_numero: result[0].bolsa_horas_numero ?? null,
+      remaining_leaves: result[0].remaining_leaves ?? null
+    };
+  }
+  return { bolsa_horas_numero: null, remaining_leaves: null };
+}
 export async function getEmployeeTiempoActividad({ uid, pass, emp_id, project_id, actividad_id }: { uid: number; pass: string; emp_id: number; project_id: number; actividad_id: number }) {
   // Llama al método get_employee_tiempo_actividad en el backend usando la estructura y endpoint indicados
   const body = {
@@ -17,7 +46,7 @@ export async function getEmployeeTiempoActividad({ uid, pass, emp_id, project_id
         pass,
         "hr.attendance",
         "get_employee_tiempo_actividad",
-        [emp_id, project_id, actividad_id]
+        [[], emp_id, project_id, actividad_id]
       ]
     }
   };

@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Button, Switch, Text, TextInput, View } from "react-native";
 import { useColorScheme } from "../../../hooks/useColorScheme"; // o el path correcto
+import { LoginErrorModal } from '../../LoginErrorModal';
 import styles from "../AttendanceStyles";
 import { BeforeCheckoutStepProps } from "./AttendanceStepTypes";
 
@@ -21,6 +22,9 @@ export function BeforeCheckoutStep({
   const observacionesRef = useRef("");
   // Estado para el switch de calidad
   const [calidad, setCalidad] = React.useState(true);
+  // Estado para el modal de error
+  const [errorModalVisible, setErrorModalVisible] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
   // Siempre mantener el valor más reciente del input
   React.useEffect(() => {
     observacionesRef.current = observaciones;
@@ -39,6 +43,12 @@ export function BeforeCheckoutStep({
 
   // Mostrar pedirAvanceMsg encima del campo observaciones, siempre, en formato Avance: "valor"
   return (
+    <>
+      <LoginErrorModal
+        visible={errorModalVisible}
+        message={errorMessage}
+        onClose={() => setErrorModalVisible(false)}
+      />
     <View style={{ flex: 1, padding: 16 }}>
       <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
         <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
@@ -135,7 +145,8 @@ export function BeforeCheckoutStep({
               color="#b71c1c"
               onPress={() => {
                 if (!observacionesRef.current || observacionesRef.current.trim() === "") {
-                  alert("Por favor, escribe una observación antes de registrar la salida.");
+                  setErrorMessage("Por favor, escribe una observación antes de registrar la salida.");
+                  setErrorModalVisible(true);
                   return;
                 }
                 // Enviar calidad y avance como argumentos si onCheckOut lo soporta
@@ -161,5 +172,6 @@ export function BeforeCheckoutStep({
         </View>
       </View>
     </View>
+    </>
   );
 }

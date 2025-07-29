@@ -38,6 +38,8 @@ export function WelcomeStep({
           selectedTask={selectedTask}
           onSelectProject={setSelectedProject}
           onSelectTask={setSelectedTask}
+          currentProject={selectedProject}
+          currentTask={selectedTask}
         />
         <View style={[styles.buttonRow, { width: '100%', justifyContent: 'center' }]}> 
           <View style={[styles.button, { backgroundColor: '#b71c1c' }]}> 

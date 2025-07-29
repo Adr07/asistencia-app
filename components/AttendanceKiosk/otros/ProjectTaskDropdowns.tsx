@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getEmployeeTiempoActividad } from '../../../db/odooApi';
-// import { getEmployeeTiempoActividad } from '../../../db/odooApi';
 import { useProjectTaskDropdownsLogic } from '../../../ts/useProjectTaskDropdownsLogic';
 import ProjectTaskDropdownsStyles from './ProjectTaskDropdownsStyles';
 
@@ -33,7 +32,7 @@ interface DropdownProps {
   currentProject?: any;
 }
 
-function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.label || item.value || item.name, keyExtractor = (item) => item.id.toString(), pedirAvanceMsg, uid, pass, currentTask, currentProject }: DropdownProps & { pedirAvanceMsg?: string, uid: number, pass: string, currentTask?: any, currentProject?: any }) {
+function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, disabled, renderItem = (item) => item.label || item.value || item.name, keyExtractor = (item) => item.id.toString(), pedirAvanceMsg, uid, pass, currentTask, currentProject, isActivityDropdown = false }: DropdownProps & { pedirAvanceMsg?: string, uid: number, pass: string, currentTask?: any, currentProject?: any, isActivityDropdown?: boolean }) {
   // Estado para los tiempos de actividad por id de actividad
   const [activityTimes, setActivityTimes] = useState<{ [actividadId: string]: number | null }>({});
   const [isOpen, setIsOpen] = useState(false);
@@ -98,14 +97,9 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
   //       const timesObj: { [actividadId: string]: number | null } = {};
   //       resultArr.forEach(({ id, tiempo }) => {
   //         timesObj[id] = tiempo;
-  //       });
-  //       setActivityTimes(timesObj);
-  //       setLoadingTimes(false);
-  //     });
-  //   }
-  //   if (!isOpen) setActivityTimes({});
-  // }, [isOpen, data, currentProject, uid, pass]);
-
+  // Determinar si es dropdown de actividades (currentProject existe) o de proyectos
+  // Solo mostrar tiempo en actividades si el dropdown es de actividades (no proyectos)
+  // Mostrar el valor tal como viene del backend, sin formatear
   // Filtrar data por búsqueda
   const filteredData = search.trim().length > 0
     ? data.filter(item => renderItem(item).toLowerCase().includes(search.trim().toLowerCase()))
@@ -117,20 +111,6 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
     setIsOpen(false);
     setSearch('');
   };
-
-  function formatTime(minutesOrSeconds: number | null): string {
-    if (minutesOrSeconds == null) return '';
-    let totalMinutes = minutesOrSeconds;
-    if (minutesOrSeconds > 10000) totalMinutes = Math.round(minutesOrSeconds / 60); // fallback si backend da segundos
-    const h = Math.floor(totalMinutes / 60);
-    const m = Math.floor(totalMinutes % 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-  }
-
-  // El valor seleccionado viene de selectedValue (prop)
-  // Para deshabilitar la opción actual, recibimos currentTask/currentProject como prop
-  // Así que recibimos currentTask/currentProject como prop y lo usamos directamente
 
   return (
     <View style={ProjectTaskDropdownsStyles.dropdownWrapper}>
@@ -154,9 +134,10 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
               <>
                 <Text>
                   {renderItem(selectedValue)}
-                  {currentProject && selectedValue && activityTimes[selectedValue.id] != null && (
+                  {/* Solo mostrar horas si es dropdown de actividades */}
+                  {isActivityDropdown && selectedValue && activityTimes[selectedValue.id] != null && (
                     <Text style={{ marginLeft: 8, color: '#888', fontSize: 13 }}>
-                      {' · ' + formatTime(activityTimes[selectedValue.id])}
+                      {' · ' + activityTimes[selectedValue.id]}
                     </Text>
                   )}
                 </Text>
@@ -166,7 +147,6 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
         )}
         <Text style={ProjectTaskDropdownsStyles.dropdownArrow}>{isOpen ? '▲' : '▼'}</Text>
       </TouchableOpacity>
-
       <Modal
         visible={isOpen}
         transparent={true}
@@ -194,6 +174,10 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
               onChangeText={setSearch}
               autoFocus
             />
+            {/* Mensaje 'Horas' solo en dropdown de actividades */}
+            {isActivityDropdown && (
+              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4, textAlign: 'right', width: '100%' }}>Horas</Text>
+            )}
             <FlatList
               data={filteredData}
               keyExtractor={keyExtractor}
@@ -205,7 +189,11 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
                   }
                 }
                 const isSelected = selectedValue && keyExtractor(selectedValue) === keyExtractor(item);
-                const isActivityDropdown = !!currentProject;
+                // Solo mostrar horas en actividades, no en proyectos
+                // Todos los items en el dropdown de actividades son actividades
+                if (isOpen) {
+                  console.log('[Dropdown] isActivityDropdown:', isActivityDropdown, 'item:', item);
+                }
                 return (
                   <TouchableOpacity
                     style={[ProjectTaskDropdownsStyles.dropdownItem, isSelected && ProjectTaskDropdownsStyles.selectedDropdownItem, isCurrent && { opacity: 0.5 }]}
@@ -214,13 +202,16 @@ function CustomDropdown({ data, selectedValue, onSelect, placeholder, loading, d
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={[ProjectTaskDropdownsStyles.dropdownItemText, isActivityDropdown ? { color: '#d32f2f', fontWeight: 'bold' } : null]}>
+                        <Text style={[ProjectTaskDropdownsStyles.dropdownItemText, isActivityDropdown ? { color: '#000', fontWeight: 'bold' } : null]}>
                           {renderItem(item)}{isCurrent ? ' (actual)' : ''}
                         </Text>
                       </View>
-                      <Text style={{ color: '#d32f2f', fontSize: 13, minWidth: 40, textAlign: 'right' }}>
-                        {typeof activityTimes[item.id] !== 'undefined' ? activityTimes[item.id] : 0}
-                      </Text>
+                      {/* Solo mostrar horas si es dropdown de actividades, en gris */}
+                      {isActivityDropdown && typeof activityTimes[item.id] !== 'undefined' && activityTimes[item.id] !== null && (
+                        <Text style={{ color: '#888', fontSize: 13, minWidth: 40, textAlign: 'right' }}>
+                          {activityTimes[item.id]}
+                        </Text>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
@@ -253,6 +244,9 @@ export default function ProjectTaskDropdowns({
     loading,
     loadingTasks
   } = useProjectTaskDropdownsLogic(uid, pass, selectedProject, currentTask);
+
+  // Filtrar proyectos con id 0
+  const filteredProyectos = Array.isArray(proyectos) ? proyectos.filter(p => p?.id !== 0) : proyectos;
 
   // Mostrar en consola los proyectos y actividades cada vez que cambian
   React.useEffect(() => {
@@ -301,7 +295,7 @@ export default function ProjectTaskDropdowns({
       <View style={ProjectTaskDropdownsStyles.fieldContainer}>
         <Text style={ProjectTaskDropdownsStyles.label}>Proyecto:</Text>
         <CustomDropdown
-          data={proyectos}
+          data={filteredProyectos}
           selectedValue={selectedProject}
           onSelect={handleProjectChange}
           placeholder="Selecciona un proyecto..."
@@ -311,9 +305,10 @@ export default function ProjectTaskDropdowns({
           keyExtractor={(item) => item.id.toString()}
           uid={uid}
           pass={pass}
+          isActivityDropdown={false}
         />
         {/* Cartel si no hay proyectos */}
-        {!loading && proyectos.length === 0 && (
+        {!loading && filteredProyectos.length === 0 && (
           <Text style={{ color: '#888', marginTop: 8 }}>No hay proyectos disponibles</Text>
         )}
       </View>
@@ -333,6 +328,8 @@ export default function ProjectTaskDropdowns({
           pass={pass}
           pedirAvanceMsg={pedirAvanceMsg}
           currentTask={currentTask}
+          currentProject={currentProject}
+          isActivityDropdown={true}
         />
         {/* Mensaje de avance eliminado de debajo del botón de actividad */}
         {/* Cartel si no hay actividades */}

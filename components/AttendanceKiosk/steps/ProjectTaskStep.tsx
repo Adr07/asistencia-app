@@ -58,6 +58,14 @@ export function ProjectTaskStep({
   }, []);
   // Eliminado: log de observaciones innecesario y campo opcional
 
+  // Filtrar el proyecto con id 0 para que no aparezca en la lista de proyectos
+  const filterProjects = (projects: any) => {
+    if (!projects) return projects;
+    if (Array.isArray(projects)) {
+      return projects.filter((p) => p?.id !== 0);
+    }
+    return projects;
+  };
   // En modo changing_task, usar los pending y los setters safe
   const projectListSelectedProject = mode === "changing_task" ? pendingProject : selectedProject;
   const projectListSelectedTask = mode === "changing_task" ? pendingTask : selectedTask;
@@ -87,13 +95,13 @@ export function ProjectTaskStep({
         <ProjectTaskDropdowns
           uid={uid}
           pass={pass}
-          selectedProject={projectListSelectedProject}
+          selectedProject={filterProjects(projectListSelectedProject)}
           selectedTask={projectListSelectedTask}
           onSelectProject={projectListSetProject}
           onSelectTask={projectListSetTask}
           hideTitle={mode === "changing_task"}
           pedirAvanceMsg={pedirAvanceMsg}
-          currentProject={mode === "changing_task" ? pendingProject : currentProject}
+          currentProject={mode === "changing_task" ? filterProjects(pendingProject) : filterProjects(currentProject)}
           currentTask={mode === "changing_task" ? pendingTask : currentTask}
         />
 
