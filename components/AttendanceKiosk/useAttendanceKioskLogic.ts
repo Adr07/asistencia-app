@@ -80,8 +80,9 @@ export function useAttendanceKioskLogic(
       const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
       setLocationAlertMessage(message);
       setShowLocationAlert(true);
-      return false;
+      // Solo advertir, no bloquear el flujo
     }
+    // Siempre permitir continuar
     return true;
   }, [getCurrentLocation, locationError]);
 
@@ -131,7 +132,7 @@ export function useAttendanceKioskLogic(
       const message = locationError || "No se pudo obtener la ubicación. Verifica que el GPS esté activado y que tengas permisos de ubicación.";
       setLocationAlertMessage(message);
       setShowLocationAlert(true);
-      return;
+      // Solo advertir, no bloquear el flujo
     }
     const prevProject = lastProject;
     const prevTask = lastTask;

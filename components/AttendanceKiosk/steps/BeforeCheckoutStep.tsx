@@ -159,6 +159,22 @@ export function BeforeCheckoutStep({
         </View>
       
       </View>
+      <SuccessModal
+        visible={successModalVisible}
+        message={successMessage}
+        onClose={() => {
+          setSuccessModalVisible(false);
+          if (advanceAfterSuccess.current) {
+            // Aquí deberías llamar a la función que avanza el flujo, por ejemplo:
+            // Si tienes una prop como onAfterCheckOut, llámala aquí
+            // O si el flujo depende de un cambio de step, llama a setStep o similar
+            // Por ahora solo resetea el flag
+            advanceAfterSuccess.current = false;
+            // Si tienes una función para avanzar, descomenta y usa:
+            // if (typeof onAfterCheckOut === 'function') onAfterCheckOut();
+          }
+        }}
+      />
     </View>
   );
 }

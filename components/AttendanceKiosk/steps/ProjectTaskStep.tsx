@@ -1,8 +1,10 @@
 import { Button, ScrollView, Text, TextInput, View } from "react-native";
+import { SuccessModal } from '../../SuccessModal';
 import styles from "../AttendanceStyles";
+import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
 import { ProjectTaskStepProps } from "./AttendanceStepTypes";
 
-import ProjectTaskDropdowns from "../otros/ProjectTaskDropdowns";
+
 
 import React from "react";
 
@@ -58,7 +60,7 @@ export function ProjectTaskStep({
           selectedTask={projectListSelectedTask}
           onSelectProject={projectListSetProject}
           onSelectTask={projectListSetTask}
-          hideTitle={mode === "changing_task"}
+          hideTitle={isChangingTask}
           pedirAvanceMsg={pedirAvanceMsg}
           currentProject={currentProject}
           currentTask={currentTask}
@@ -138,6 +140,12 @@ export function ProjectTaskStep({
           )}
         </View>
       </View>
+      {/* Modal de éxito */}
+      <SuccessModal
+        visible={successModalVisible}
+        message={successMessage}
+        onClose={() => setSuccessModalVisible(false)}
+      />
     </ScrollView>
   );
 }
